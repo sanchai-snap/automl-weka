@@ -56,7 +56,7 @@ public class CommandLineTargetAlgorithmEvaluator extends AbstractAsyncTargetAlgo
 	
 	/**
 	 * Constructs CommandLineTargetAlgorithmEvaluator
-	 * @param execConfig 			execution configuration of the target algorithm
+//	 * @param execConfig 			execution configuration of the target algorithm
 	 * @param options	<code>true</code> if we should execute algorithms concurrently, <code>false</code> otherwise
 	 */
 	CommandLineTargetAlgorithmEvaluator(CommandLineTargetAlgorithmEvaluatorOptions options)
@@ -92,108 +92,170 @@ public class CommandLineTargetAlgorithmEvaluator extends AbstractAsyncTargetAlgo
 	@Override
 	public void evaluateRunsAsync(final List<AlgorithmRunConfiguration> runConfigs,final  TargetAlgorithmEvaluatorCallback taeCallback, final TargetAlgorithmEvaluatorRunObserver runStatusObserver) 
 	{
-		
+
 		if(runConfigs.size() == 0)
 		{
 			taeCallback.onSuccess(Collections.<AlgorithmRunResult> emptyList());
 			return;
 		}
-		
-		
+
+		ConcurrentAlgorithmRunner runner =null;
+
+		List<AlgorithmRunResult> runs = null;
+
 		try {
-			this.asyncExecutions.acquire();
-		} catch(InterruptedException e)
-		{
-			Thread.currentThread().interrupt();
-			taeCallback.onFailure(new IllegalStateException("Request interrupted", e));
+
+			runner = getAlgorithmRunner(runConfigs,runStatusObserver);
+			runs =  runner.run(commandLineAlgorithmRunExecutorService);
+
+		} catch(RuntimeException e) {
+			taeCallback.onFailure(e);
+			return;
+		} catch(Throwable e) {
+			taeCallback.onFailure(new IllegalStateException("Unexpected Throwable:", e));
+			if(e instanceof Error) {
+				throw e;
+			}
+
 			return;
 		}
-		
-		
-		try 
-		{
-			this.asyncExecService.execute(new Runnable()
-			{
-	
-				@Override
-				public void run() {
-					
-	
-					ConcurrentAlgorithmRunner runner =null;
-					
-					List<AlgorithmRunResult> runs = null;
-					
-					try 
-					{
-						try {
-							runner = getAlgorithmRunner(runConfigs,runStatusObserver);
-							runs =  runner.run(commandLineAlgorithmRunExecutorService);
-						} finally
-						{
-							asyncExecutions.release();	
-						}
-					} catch(RuntimeException e)
-					{
-						taeCallback.onFailure(e);
-						return;
-					} catch(Throwable e)
-					{
-						taeCallback.onFailure(new IllegalStateException("Unexpected Throwable:", e));
-						if(e instanceof Error)
-						{
-							throw e;
-						}
-						
-						return;
-					}
-					
-					addRuns(runs);
-					
-					final List<AlgorithmRunResult> finalSolutions = runs;
-					
-					Runnable callbackInvokingRunnable = new Runnable()
-					{
 
-						@Override
-						public void run() {
-							try {
-								if(runStatusObserver != null)
-								{
-									runStatusObserver.currentStatus(finalSolutions);
-								}
-								taeCallback.onSuccess(finalSolutions);
-							} catch(RuntimeException e)
-							{
-								taeCallback.onFailure(e);
-							} catch(Throwable e)
-							{
-								taeCallback.onFailure(new IllegalStateException("Unexpected Throwable:", e));
-								
-								if(e instanceof Error)
-								{
-									throw e;
-								}
-							}
-							
-						}
-						
-					};
-					
-					callbackExecutorService.execute(callbackInvokingRunnable);
-					
-					
-					
-					
-					
-				}
-				
-			});
-		} catch(RuntimeException e)
+		addRuns(runs);
+
+		final List<AlgorithmRunResult> finalSolutions = runs;
+
+		if(runStatusObserver != null)
 		{
-			log.error("Got exception on " + AlgorithmRunConfiguration.class.getSimpleName() + " submission to " + this.getClass().getSimpleName(), e);
-			asyncExecutions.release();
-			throw e;
+			runStatusObserver.currentStatus(finalSolutions);
 		}
+		taeCallback.onSuccess(finalSolutions);
+
+//		Runnable callbackInvokingRunnable = new Runnable()
+//		{
+//
+//			@Override
+//			public void run() {
+//				try {
+//					if(runStatusObserver != null)
+//					{
+//						runStatusObserver.currentStatus(finalSolutions);
+//					}
+//					taeCallback.onSuccess(finalSolutions);
+//				} catch(RuntimeException e)
+//				{
+//					taeCallback.onFailure(e);
+//				} catch(Throwable e)
+//				{
+//					taeCallback.onFailure(new IllegalStateException("Unexpected Throwable:", e));
+//
+//					if(e instanceof Error)
+//					{
+//						throw e;
+//					}
+//				}
+//
+//			}
+//
+//		};
+
+//		ConcurrentAlgorithmRunner runner = getAlgorithmRunner(runConfigs,runStatusObserver);
+//		List<AlgorithmRunResult> runs = runner.run(commandLineAlgorithmRunExecutorService);
+
+
+//		try {
+//			this.asyncExecutions.acquire();
+//		} catch(InterruptedException e)
+//		{
+//			Thread.currentThread().interrupt();
+//			taeCallback.onFailure(new IllegalStateException("Request interrupted", e));
+//			return;
+//		}
+//
+//
+//		try
+//		{
+//			this.asyncExecService.execute(new Runnable()
+//			{
+//
+//				@Override
+//				public void run() {
+//
+//
+//					ConcurrentAlgorithmRunner runner =null;
+//
+//					List<AlgorithmRunResult> runs = null;
+//
+//					try
+//					{
+//						try {
+//							runner = getAlgorithmRunner(runConfigs,runStatusObserver);
+//							runs =  runner.run(commandLineAlgorithmRunExecutorService);
+//						} finally
+//						{
+//							asyncExecutions.release();
+//						}
+//					} catch(RuntimeException e)
+//					{
+//						taeCallback.onFailure(e);
+//						return;
+//					} catch(Throwable e)
+//					{
+//						taeCallback.onFailure(new IllegalStateException("Unexpected Throwable:", e));
+//						if(e instanceof Error)
+//						{
+//							throw e;
+//						}
+//
+//						return;
+//					}
+//
+//					addRuns(runs);
+//
+//					final List<AlgorithmRunResult> finalSolutions = runs;
+//
+//					Runnable callbackInvokingRunnable = new Runnable()
+//					{
+//
+//						@Override
+//						public void run() {
+//							try {
+//								if(runStatusObserver != null)
+//								{
+//									runStatusObserver.currentStatus(finalSolutions);
+//								}
+//								taeCallback.onSuccess(finalSolutions);
+//							} catch(RuntimeException e)
+//							{
+//								taeCallback.onFailure(e);
+//							} catch(Throwable e)
+//							{
+//								taeCallback.onFailure(new IllegalStateException("Unexpected Throwable:", e));
+//
+//								if(e instanceof Error)
+//								{
+//									throw e;
+//								}
+//							}
+//
+//						}
+//
+//					};
+//
+//					callbackExecutorService.execute(callbackInvokingRunnable);
+//
+//
+//
+//
+//
+//				}
+//
+//			});
+//		} catch(RuntimeException e)
+//		{
+//			log.error("Got exception on " + AlgorithmRunConfiguration.class.getSimpleName() + " submission to " + this.getClass().getSimpleName(), e);
+//			asyncExecutions.release();
+//			throw e;
+//		}
 		
 	}
 	
@@ -286,11 +348,6 @@ public class CommandLineTargetAlgorithmEvaluator extends AbstractAsyncTargetAlgo
 			
 		}
 	}
-
-
-	
-	
-	
 
 
 }
