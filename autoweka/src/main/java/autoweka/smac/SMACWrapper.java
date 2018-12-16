@@ -55,7 +55,7 @@ public class SMACWrapper extends Wrapper
     }
 
     @Override
-    protected void _processResults(ClassifierResult res)
+    protected String _processResults(ClassifierResult res)
     {
         //Get the score
         double score = res.getScore();
@@ -98,7 +98,8 @@ public class SMACWrapper extends Wrapper
         extraResultsSB.append(res.getPercentEvaluated());
 
         //Print the result string
-        System.out.println("Result for ParamILS: " + resultStr + ", " + res.getTime() + ", 0, " + score + ", " + mExperimentSeed + ", EXTRA " + extraResultsSB.toString());
-//        System.exit(0);
+        String resultString = "Result for ParamILS: " + resultStr + ", " + res.getTime() + ", 0, " + score + ", " + mExperimentSeed + ", EXTRA " + extraResultsSB.toString();
+        System.out.println(resultString);
+        return resultString;
     }
 }

@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
  *  There are a number of 'events' that occur during the run of a wrapper - if you need to do something special here you should just be able to override these and inject the correct
  *  behaviour as needed
  */
-public class Wrapper
+public abstract class Wrapper
 {
     protected String mExperimentSeed = null;
     protected String mInstance = null; //instance string
@@ -38,7 +38,7 @@ public class Wrapper
      * Runs the wrapper with the given command line arguments - see the class description for full details
      * @param argsArray The list of arguments.
      */
-    public void run(String[] argsArray)
+    public String run(String[] argsArray)
     {
     	
     	String pid = ManagementFactory.getRuntimeMXBean().getName();
@@ -150,7 +150,7 @@ public class Wrapper
         _postRun();
 
         //Process the result
-        _processResults(res);
+        return _processResults(res);
     }
 
     /*
@@ -161,7 +161,7 @@ public class Wrapper
     protected ClassifierResult _doRun(List<String> runnerArgs)
     {
         //Run it
-    	log.warn(" [AutoML] ClassifierResult _doRun stackthread : {}, {}", this.getClass().getName(), Arrays.toString(Thread.currentThread().getStackTrace()));
+
         ClassifierResult res = new ClassifierResult(mResultMetric);
         res.setCompleted(false);
         com.sun.management.OperatingSystemMXBean OSBean = (com.sun.management.OperatingSystemMXBean) java.lang.management.ManagementFactory.getOperatingSystemMXBean();
@@ -218,7 +218,5 @@ public class Wrapper
     /*
      * Called once the run has completed (or been terminated), the results should be sent back to the SMBO method here
      */
-    protected void _processResults(ClassifierResult res)
-    {
-    }
+    protected abstract String _processResults(ClassifierResult res);
 }

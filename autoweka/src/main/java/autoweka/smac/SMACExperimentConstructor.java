@@ -118,10 +118,11 @@ public class SMACExperimentConstructor extends ExperimentConstructor
         args.add("2.0");
 
         int coreNo = (Runtime.getRuntime().availableProcessors());
-        
+//        int coreNo = 4;
+
         args.add("--cli-cores");
         args.add(coreNo+"");
-        
+
         args.add("--validation-cores");
         args.add(coreNo+"");
         

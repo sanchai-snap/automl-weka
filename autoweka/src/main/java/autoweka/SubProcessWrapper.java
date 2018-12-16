@@ -76,7 +76,7 @@ public class SubProcessWrapper extends Wrapper
      * @param res The classifier result.
      */
     @Override
-    protected void _processResults(ClassifierResult res)
+    protected String _processResults(ClassifierResult res)
     {
         System.out.print("SubProcessWrapper: Time(" + res.getTime() + ") Score(" + res.getScore() + ")");
         String outputFilePrefix = mProperties.getProperty("modelOutputFilePrefix", null);
@@ -90,10 +90,12 @@ public class SubProcessWrapper extends Wrapper
                         oldFile.delete();
                 }
                 weka.core.SerializationHelper.write(outputFilePrefix + ".model", res.getClassifier());
+
             }catch(Exception e){
                 throw new RuntimeException(e);
             }
         }
+        return "";
     }
 
     /**

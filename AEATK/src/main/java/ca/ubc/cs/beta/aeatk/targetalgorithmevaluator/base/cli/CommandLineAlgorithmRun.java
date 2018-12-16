@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -225,8 +227,8 @@ public class CommandLineAlgorithmRun implements Callable<AlgorithmRunResult>{
 	private volatile AlgorithmRunResult completedAlgorithmRun;
 	/**
 	 * Default Constructor
-	 * @param execConfig		execution configuration of the object
-	 * @param runConfig			run configuration we are executing
+//	 * @param execConfig		execution configuration of the object
+	 * @param runConfig			run configuration we are executingΩ
 	 * @param executionIDs 
 	 */ 
 	public CommandLineAlgorithmRun( AlgorithmRunConfiguration runConfig, TargetAlgorithmEvaluatorRunObserver obs, KillHandler handler, CommandLineTargetAlgorithmEvaluatorOptions options, BlockingQueue<Integer> executionIDs) 
@@ -261,11 +263,11 @@ public class CommandLineAlgorithmRun implements Callable<AlgorithmRunResult>{
 		Thread.currentThread().setName("CLI TAE (Master Thread - TBD)");
 		if(killHandler.isKilled())
 		{
-			
+
 			log.trace("Run has already been toggled as killed {}", runConfig);
-			
+
 			RunStatus rr = RunStatus.KILLED;
-			
+
 			AlgorithmRunResult run = new ExistingAlgorithmRunResult(runConfig, rr, 0, 0, 0, runConfig.getProblemInstanceSeedPair().getSeed(), "",0);
 			try {
 				runObserver.currentStatus(Collections.singletonList((AlgorithmRunResult) run));
@@ -274,9 +276,9 @@ public class CommandLineAlgorithmRun implements Callable<AlgorithmRunResult>{
 				log.error("Error occured while notify observer ", t);
 				throw t;
 			}
-			
+
 			return run;
-			
+
 		}
 		
 		
@@ -305,7 +307,7 @@ public class CommandLineAlgorithmRun implements Callable<AlgorithmRunResult>{
 			return run;
 		}
 		
-		final Process proc;
+//		final Process proc;
 		
 		File execDir = new File(runConfig.getAlgorithmExecutionConfiguration().getAlgorithmExecutionDirectory());
 		if(!execDir.exists()) 
@@ -347,258 +349,105 @@ public class CommandLineAlgorithmRun implements Callable<AlgorithmRunResult>{
 					return run;
 				}
 				
-				int port = 0;
-				final DatagramSocket serverSocket;
-				if(options.listenForUpdates)
-				{
-					serverSocket = new DatagramSocket();
-					port = serverSocket.getLocalPort();
-				} else
-				{
-					serverSocket = null;
-				}
+//				int port = 0;
+//				final DatagramSocket serverSocket;
+//				if(options.listenForUpdates)
+//				{
+//					serverSocket = new DatagramSocket();
+//					port = serverSocket.getLocalPort();
+//				} else
+//				{
+//					serverSocket = null;
+//				}
 				
 				final AtomicDouble currentRuntime = new AtomicDouble(0);
 				
-				Runnable socketThread = new Runnable()
-				{
-					@Override
-					public void run()
-					{
-						
-						Thread.currentThread().setName("CLI TAE (Socket Thread - #"+myToken+")" );
-						
-						byte[] receiveData = new byte[1024];
-						
-						while(true)
-						{
-							try 
-							{
-								DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-								
-								
-								serverSocket.receive(receivePacket);
-								
-								InetAddress IPAddress = receivePacket.getAddress();
-					               
-								if (!InetAddress.getByName("localhost").equals(IPAddress))
-								{
-									log.warn("Received Request from Non-localhost, ignoring request from: {}", IPAddress.getHostAddress());
-									continue;
-								}
-				               
-				               Double runtime = Double.valueOf(new String(receivePacket.getData()));
-				              
-				               currentRuntime.set(runtime);
-				               
-							} catch(RuntimeException e)
-							{
-								log.trace("Got some runtime exception while processing data packet", e);
-							} catch(SocketException e)
-							{
-								//Don't log this since this socket exception is what we
-								//we expect since most of the time we will be blocked on the socket
-								//when we are shutdown and interrupted.
-								return;
-							} catch (IOException e) {
-								log.warn("Unknown IOException occurred ", e);
-							}
-							
-						}
-					}
-					
-					
-				};
+//				Runnable socketThread = new Runnable()
+//				{
+//					@Override
+//					public void run()
+//					{
+//
+//						Thread.currentThread().setName("CLI TAE (Socket Thread - #"+myToken+")" );
+//
+//						byte[] receiveData = new byte[1024];
+//
+//						while(true)
+//						{
+//							try
+//							{
+//								DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+//
+//
+//								serverSocket.receive(receivePacket);
+//
+//								InetAddress IPAddress = receivePacket.getAddress();
+//
+//								if (!InetAddress.getByName("localhost").equals(IPAddress))
+//								{
+//									log.warn("Received Request from Non-localhost, ignoring request from: {}", IPAddress.getHostAddress());
+//									continue;
+//								}
+//
+//				               Double runtime = Double.valueOf(new String(receivePacket.getData()));
+//
+//				               currentRuntime.set(runtime);
+//
+//							} catch(RuntimeException e)
+//							{
+//								log.trace("Got some runtime exception while processing data packet", e);
+//							} catch(SocketException e)
+//							{
+//								//Don't log this since this socket exception is what we
+//								//we expect since most of the time we will be blocked on the socket
+//								//when we are shutdown and interrupted.
+//								return;
+//							} catch (IOException e) {
+//								log.warn("Unknown IOException occurred ", e);
+//							}
+//
+//						}
+//					}
+//
+//
+//				};
 				
 				this.startWallclockTimer();
-				proc = runProcess(port, token);
-				
-				try 
-				{
-				outstandingRuns.add(new Pair<CommandLineAlgorithmRun, Process>(this, proc));
+				String processResultString = runProcess();
 
-				final Process innerProcess = proc; 
-				
-				
-				final Semaphore stdErrorDone = new Semaphore(0);
-	
-				
-				Runnable standardErrorReader = new Runnable()
-				{
-	
-					@Override
-					public void run() {
-						
-						Thread.currentThread().setName("CLI TAE (STDERR Thread - #" + myToken + ")");
-						try {
-							try { 
-								try (BufferedReader procIn = new BufferedReader(new InputStreamReader(innerProcess.getErrorStream())))
-								{
-									do{
-										
-										String line;
-										boolean read = false;
-										while(procIn.ready())
-										{
-											read = true;
-											line = procIn.readLine();
-											
-											if(line == null)
-											{
-												
-												return;
-											}
-											log.warn("[PROCESS-ERR]  {}", line);
-											
-										}
-									
-										
-										if(!read)
-										{
-											Thread.sleep(50);
-										}
-										
-									} while(!processEnded.get());
-									
-									
-									StringBuilder sb = new StringBuilder();
-									
-									//In case something else has come in
-									if(procIn.ready())
-									{
-										//Probably not the most efficient way to read
-										char[] input = new char[10000];
-										procIn.read(input);
-										sb.append(String.valueOf(input));
-										
-									}
-									
-									if(sb.toString().trim().length() > 0)
-									{
-										log.warn("[PROCESS-ERR] {}", sb.toString().trim());
-									}
-								}
-							} finally
-							{
-								
-								stdErrorDone.release();
-								log.trace("Standard Error Done");
-							}
-						} catch(InterruptedException e)
-						{
-							Thread.currentThread().interrupt();
-							return;
-						} catch(IOException e)
-						{
-							log.warn("Unexpected IOException occurred {}",e);
-						}
-						
-						
-					}
-					
-				};
-					
-			
-				Runnable observerThread = new Runnable()
-				{
-	
-					@Override
-					public void run() {
-						Thread.currentThread().setName("CLI TAE (Observer Thread - #" + myToken+ ")");
-	
-						while(true)
-						{
-						
-							double currentTime = getCurrentWallClockTime() / 1000.0;
-							
-							runObserver.currentStatus(Collections.singletonList((AlgorithmRunResult) new RunningAlgorithmRunResult(runConfig,  Math.max(0,currentRuntime.get()),  0,0, runConfig.getProblemInstanceSeedPair().getSeed(), currentTime, killHandler)));
-							try {
-								
-								
-								
-								//Sleep here so that maybe anything that wanted us dead will have gotten to the killHandler
-								Thread.sleep(25);
-								if(killHandler.isKilled())
-								{
-									wasKilled = true;
-									log.trace("Trying to kill run: {} latest time: {} " , runConfig, currentRuntime.get());
+				boolean isCanProcess = processLine(processResultString);
 
-
-									killProcess(proc);
-									return;
-								}
-								Thread.sleep(observerFrequency - 25);
-							} catch (InterruptedException e) {
-								Thread.currentThread().interrupt();
-								break;
-							}
-							
-						}
-						
-						
-					}
-					
-				};
-				
-				ExecutorService threadPoolExecutor = Executors.newCachedThreadPool(new SequentiallyNamedThreadFactory("Command Line Target Algorithm Evaluator Thread "));
-				try 
-				{
-					if(options.listenForUpdates)
-					{
-						threadPoolExecutor.execute(socketThread);
-					}
-					threadPoolExecutor.execute(observerThread);
-					threadPoolExecutor.execute(standardErrorReader);
-					BufferedReader read = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-					
-					//Scanner procIn = new Scanner(proc.getInputStream());
-					
-					
-					 
-					if(jvmShutdownDetected.get())
-					{ //Possible that this run started after the shutdown call was flagged, but before we put it in the map.
-					
-						killProcess(proc);
-					}
-					try
-					{
-						processRunLoop(read,proc);
-					} finally
-					{
-						killProcess(proc);
-					}
-					
-					if(completedAlgorithmRun == null)
+				if(completedAlgorithmRun == null)
 					{
 						if(wasKilled)
 						{
 							double currentTime = Math.max(0,currentRuntime.get());
 							completedAlgorithmRun = new ExistingAlgorithmRunResult(runConfig, RunStatus.KILLED, currentTime, 0,0, runConfig.getProblemInstanceSeedPair().getSeed(), "Killed Manually", this.getCurrentWallClockTime() / 1000.0 );
-							
+
 						} else if(jvmShutdownDetected.get())
 						{
 							double currentTime = Math.max(0,currentRuntime.get());
-							completedAlgorithmRun = new ExistingAlgorithmRunResult(runConfig,  RunStatus.KILLED, currentTime, 0,0, runConfig.getProblemInstanceSeedPair().getSeed(), "JVM Shutdown Detected", this.getCurrentWallClockTime()  / 1000.0);							
+							completedAlgorithmRun = new ExistingAlgorithmRunResult(runConfig,  RunStatus.KILLED, currentTime, 0,0, runConfig.getProblemInstanceSeedPair().getSeed(), "JVM Shutdown Detected", this.getCurrentWallClockTime()  / 1000.0);
 						} else
 						{
 							double currentTime = Math.max(0,currentRuntime.get());
 							completedAlgorithmRun = new ExistingAlgorithmRunResult(runConfig, RunStatus.CRASHED, currentTime, 0,0, runConfig.getProblemInstanceSeedPair().getSeed(), "ERROR: Wrapper did not output anything that matched the expected output (\"Result of algorithm run:...\"). Please try executing the wrapper directly", this.getCurrentWallClockTime() / 1000.0);
 						}
 					}
-					
-					
+
+
 					switch(completedAlgorithmRun.getRunStatus())
 					{
 						case ABORT:
 						case CRASHED:
 
-						
+
 								log.error("The following algorithm call failed: cd \"{}\" " + COMMAND_SEPERATOR + "  {} ",new File(runConfig.getAlgorithmExecutionConfiguration().getAlgorithmExecutionDirectory()).getAbsolutePath(), getTargetAlgorithmExecutionCommandAsString( runConfig));
-							
+
 								if(outputQueue.size() > 0)
 								{
 									log.error("The last {} lines of output we saw were:", outputQueue.size());
-									
+
 									for(String s : outputQueue)
 									{
 										log.error("> "+s);
@@ -607,46 +456,251 @@ public class CommandLineAlgorithmRun implements Callable<AlgorithmRunResult>{
 								{
 									log.debug("No output on standard out detected");
 								}
-								
-								
-							
+
+
+
 						default:
 							//Doesn't matter
-						
-					}
-					
-					outputQueue.clear();
 
-					read.close();
+					}
 
-					stdErrorDone.acquireUninterruptibly();
-				} finally
-				{
-					//Close the listening socket
-					if(serverSocket != null)
-					{
-						serverSocket.close();
-					}
-					threadPoolExecutor.shutdownNow();
-					try {
-						threadPoolExecutor.awaitTermination(24, TimeUnit.HOURS);
-					} catch (InterruptedException e) {
-						Thread.currentThread().interrupt();
-					}
-				}
-
-				} finally
-				{
-					if(proc != null)
-					{
-						proc.destroy();
-					}
-					
-				}
-				
 				runObserver.currentStatus(Collections.singletonList(completedAlgorithmRun));
-				log.debug("Run {} is completed", completedAlgorithmRun);
+
+//				proc = runProcess(port, token);
+//				try
+//				{
+//				outstandingRuns.add(new Pair<CommandLineAlgorithmRun, Process>(this, proc));
+
+//				final Process innerProcess = proc;
 				
+				
+//				final Semaphore stdErrorDone = new Semaphore(0);
+	
+				
+//				Runnable standardErrorReader = new Runnable()
+//				{
+//
+//					@Override
+//					public void run() {
+//
+//						Thread.currentThread().setName("CLI TAE (STDERR Thread - #" + myToken + ")");
+//						try {
+//							try {
+//								try (BufferedReader procIn = new BufferedReader(new InputStreamReader(innerProcess.getErrorStream())))
+//								{
+//									do{
+//
+//										String line;
+//										boolean read = false;
+//										while(procIn.ready())
+//										{
+//											read = true;
+//											line = procIn.readLine();
+//
+//											if(line == null)
+//											{
+//
+//												return;
+//											}
+//											log.warn("[PROCESS-ERR]  {}", line);
+//
+//										}
+//
+//
+//										if(!read)
+//										{
+//											Thread.sleep(50);
+//										}
+//
+//									} while(!processEnded.get());
+//
+//
+//									StringBuilder sb = new StringBuilder();
+//
+//									//In case something else has come in
+//									if(procIn.ready())
+//									{
+//										//Probably not the most efficient way to read
+//										char[] input = new char[10000];
+//										procIn.read(input);
+//										sb.append(String.valueOf(input));
+//
+//									}
+//
+//									if(sb.toString().trim().length() > 0)
+//									{
+//										log.warn("[PROCESS-ERR] {}", sb.toString().trim());
+//									}
+//								}
+//							} finally
+//							{
+//
+//								stdErrorDone.release();
+//								log.trace("Standard Error Done");
+//							}
+//						} catch(InterruptedException e)
+//						{
+//							Thread.currentThread().interrupt();
+//							return;
+//						} catch(IOException e)
+//						{
+//							log.warn("Unexpected IOException occurred {}",e);
+//						}
+//
+//
+//					}
+//
+//				};
+					
+			
+//				Runnable observerThread = new Runnable()
+//				{
+//
+//					@Override
+//					public void run() {
+//						Thread.currentThread().setName("CLI TAE (Observer Thread - #" + myToken+ ")");
+//
+//						while(true)
+//						{
+//
+//							double currentTime = getCurrentWallClockTime() / 1000.0;
+//
+//							runObserver.currentStatus(Collections.singletonList((AlgorithmRunResult) new RunningAlgorithmRunResult(runConfig,  Math.max(0,currentRuntime.get()),  0,0, runConfig.getProblemInstanceSeedPair().getSeed(), currentTime, killHandler)));
+//							try {
+//
+//
+//
+//								//Sleep here so that maybe anything that wanted us dead will have gotten to the killHandler
+//								Thread.sleep(25);
+//								if(killHandler.isKilled())
+//								{
+//									wasKilled = true;
+//									log.trace("Trying to kill run: {} latest time: {} " , runConfig, currentRuntime.get());
+//
+//
+//									killProcess(proc);
+//									return;
+//								}
+//								Thread.sleep(observerFrequency - 25);
+//							} catch (InterruptedException e) {
+//								Thread.currentThread().interrupt();
+//								break;
+//							}
+//
+//						}
+//
+//
+//					}
+//
+//				};
+
+//				ExecutorService threadPoolExecutor = Executors.newCachedThreadPool(new SequentiallyNamedThreadFactory("Command Line Target Algorithm Evaluator Thread "));
+//				try
+//				{
+////					if(options.listenForUpdates)
+////					{
+////						threadPoolExecutor.execute(socketThread);
+////					}
+////					threadPoolExecutor.execute(observerThread);
+////					threadPoolExecutor.execute(standardErrorReader);
+//					BufferedReader read = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+//
+//					//Scanner procIn = new Scanner(proc.getInputStream());
+//
+//
+//
+//					if(jvmShutdownDetected.get())
+//					{ //Possible that this run started after the shutdown call was flagged, but before we put it in the map.
+//
+//						killProcess(proc);
+//					}
+//					try
+//					{
+//						processRunLoop(read,proc);
+//					} finally
+//					{
+//						killProcess(proc);
+//					}
+//
+//					if(completedAlgorithmRun == null)
+//					{
+//						if(wasKilled)
+//						{
+//							double currentTime = Math.max(0,currentRuntime.get());
+//							completedAlgorithmRun = new ExistingAlgorithmRunResult(runConfig, RunStatus.KILLED, currentTime, 0,0, runConfig.getProblemInstanceSeedPair().getSeed(), "Killed Manually", this.getCurrentWallClockTime() / 1000.0 );
+//
+//						} else if(jvmShutdownDetected.get())
+//						{
+//							double currentTime = Math.max(0,currentRuntime.get());
+//							completedAlgorithmRun = new ExistingAlgorithmRunResult(runConfig,  RunStatus.KILLED, currentTime, 0,0, runConfig.getProblemInstanceSeedPair().getSeed(), "JVM Shutdown Detected", this.getCurrentWallClockTime()  / 1000.0);
+//						} else
+//						{
+//							double currentTime = Math.max(0,currentRuntime.get());
+//							completedAlgorithmRun = new ExistingAlgorithmRunResult(runConfig, RunStatus.CRASHED, currentTime, 0,0, runConfig.getProblemInstanceSeedPair().getSeed(), "ERROR: Wrapper did not output anything that matched the expected output (\"Result of algorithm run:...\"). Please try executing the wrapper directly", this.getCurrentWallClockTime() / 1000.0);
+//						}
+//					}
+//
+//
+//					switch(completedAlgorithmRun.getRunStatus())
+//					{
+//						case ABORT:
+//						case CRASHED:
+//
+//
+//								log.error("The following algorithm call failed: cd \"{}\" " + COMMAND_SEPERATOR + "  {} ",new File(runConfig.getAlgorithmExecutionConfiguration().getAlgorithmExecutionDirectory()).getAbsolutePath(), getTargetAlgorithmExecutionCommandAsString( runConfig));
+//
+//								if(outputQueue.size() > 0)
+//								{
+//									log.error("The last {} lines of output we saw were:", outputQueue.size());
+//
+//									for(String s : outputQueue)
+//									{
+//										log.error("> "+s);
+//									}
+//								} else
+//								{
+//									log.debug("No output on standard out detected");
+//								}
+//
+//
+//
+//						default:
+//							//Doesn't matter
+//
+//					}
+//
+//					outputQueue.clear();
+//
+//					read.close();
+//
+////					stdErrorDone.acquireUninterruptibly();
+//				} finally
+//				{
+//					//Close the listening socket
+////					if(serverSocket != null)
+////					{
+////						serverSocket.close();
+////					}
+//					threadPoolExecutor.shutdownNow();
+//					try {
+//						threadPoolExecutor.awaitTermination(24, TimeUnit.HOURS);
+//					} catch (InterruptedException e) {
+//						Thread.currentThread().interrupt();
+//					}
+//				}
+//
+//				} finally
+//				{
+//					if(proc != null)
+//					{
+//						proc.destroy();
+//					}
+//
+//				}
+//
+//				runObserver.currentStatus(Collections.singletonList(completedAlgorithmRun));
+//				log.debug("Run {} is completed", completedAlgorithmRun);
+
 			} finally
 			{
 				if(!executionIDs.offer(token))
@@ -658,13 +712,13 @@ public class CommandLineAlgorithmRun implements Callable<AlgorithmRunResult>{
 						Thread.currentThread().interrupt();
 					}
 				}
-				
-				
+
+
 			}
 
 			return completedAlgorithmRun;
-			
-		} catch (IOException e1) 
+
+		} catch (IOException e1)
 		{
 
 			//String execCmd = getTargetAlgorithmExecutionCommandAsString(execConfig,runConfig);
@@ -676,113 +730,247 @@ public class CommandLineAlgorithmRun implements Callable<AlgorithmRunResult>{
 	}
 	
 		
+//	/**
+//	 * Processes all the output of the target algorithm
+//	 *
+//	 * Takes a line from the input and tries to parse it
+//	 *
+//	 * @param procIn Scanner of processes output stream
+//	 */
+//	public void processResult(String resultString)
+//	{
+//
+//		int i=0;
+//			try {
+//				boolean matchFound = false;
+//				try
+//				{
+//outerloop:
+//					do{
+//
+//
+//						String line;
+//						boolean read = false;
+//						//TODO This ready call doesn't guarantee we can read a line
+//
+//						while(procIn.ready())
+//						{
+//							read = true;
+//							line = procIn.readLine();
+//
+//							if(line == null)
+//							{
+//								log.trace("Process has ended");
+//								processEnded.set(true);
+//								break outerloop;
+//							}
+//							outputQueue.add(line);
+//							if (outputQueue.size() > MAX_LINES_TO_SAVE)
+//							{
+//								outputQueue.poll();
+//							}
+//
+//
+//
+//							if(wasKilled)
+//							{
+//								continue;
+//							}
+//							boolean matched = processLine(line);
+//
+//
+//							if(matched && matchFound)
+//							{
+//								log.error("Second output of matching line detected, there is a problem with your wrapper. You can try turning with log all process output enabled to debug: {} ", line);
+//								completedAlgorithmRun = ExistingAlgorithmRunResult.getAbortResult(runConfig, "duplicate lines matched");
+//								continue;
+//							}
+//							matchFound = matchFound | matched;
+//						}
+//
+//						if(completedAlgorithmRun != null && wasKilled)
+//						{
+//							if(completedAlgorithmRun.getWallclockExecutionTime() > 1)
+//							{ //For very short runs this might not matter.
+//								log.warn("Run was killed but we somehow completed this might be a race condition but our result is: {}. This is a warning just so that developers can see this having occurred and judge the correctness" ,completedAlgorithmRun.getResultLine());
+//							}
+//						}
+//
+//
+//
+//						if(!procIn.ready() && exited(p))
+//						{
+//							//I assume that if the stream isn't ready and the process has exited that
+//							//we have processed everything
+//							processEnded.set(true);
+//							break;
+//						}
+//
+//						if(!read)
+//						{
+//							if(++i % 12000 == 0)
+//							{
+//								log.trace("Slept for 5 minutes waiting for pid {}  &&  (matching line found?: {} ) " ,getPID(p), matchFound);
+//							}
+//							Thread.sleep(25);
+//						}
+//
+//					} while(!processEnded.get());
+//				} finally
+//				{
+//					procIn.close();
+//				}
+//			} catch (IOException e) {
+//
+//				if(!processEnded.get())
+//				{
+//					log.trace("IO Exception occurred while processing runs");
+//				}
+//
+//			} catch (InterruptedException e) {
+//				Thread.currentThread().interrupt();
+//				return;
+//
+//			}
+//
+//
+//	}
+
+	private String runProcess() throws IOException
+	{
+		String[] execCmdArray = getTargetAlgorithmExecutionCommand(runConfig);
+
+		String[] paramsArray = Arrays.copyOfRange(execCmdArray, 6, execCmdArray.length);
+
+		String runnerClassString = execCmdArray[5];
+
+		try {
+			Class runnerClass = Class.forName(runnerClassString);
+
+			Method method = runnerClass.getMethod("run", String[].class);
+
+			Object runnerObject = runnerClass.newInstance();
+
+			Object methodParams = paramsArray;
+
+			Object runResult = method.invoke(runnerObject, methodParams);
+
+			System.out.println("Run in-proceess "+ Thread.currentThread().getId()+ " : " +runResult);
+
+			return (String) runResult;
+		} catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
+			e.printStackTrace();
+		}
+
+
+		return "";
+	}
+
 	/**
 	 * Processes all the output of the target algorithm
-	 * 
-	 * Takes a line from the input and tries to parse it 
-	 * 
+	 *
+	 * Takes a line from the input and tries to parse it
+	 *
 	 * @param procIn Scanner of processes output stream
 	 */
 	public void processRunLoop(BufferedReader procIn, Process p)
 	{
-		
-		int i=0; 
-			try {
-				boolean matchFound = false;
-				try
-				{
-outerloop:		
-					do{
-					
-						
-						String line;
-						boolean read = false;
-						//TODO This ready call doesn't guarantee we can read a line
-						
-						while(procIn.ready())
+
+		int i=0;
+		try {
+			boolean matchFound = false;
+			try
+			{
+				outerloop:
+				do{
+
+
+					String line;
+					boolean read = false;
+					//TODO This ready call doesn't guarantee we can read a line
+
+					while(procIn.ready())
+					{
+						read = true;
+						line = procIn.readLine();
+
+						if(line == null)
 						{
-							read = true;
-							line = procIn.readLine();
-							
-							if(line == null)
-							{
-								log.trace("Process has ended");
-								processEnded.set(true);
-								break outerloop;
-							}
-							outputQueue.add(line);
-							if (outputQueue.size() > MAX_LINES_TO_SAVE)
-							{
-								outputQueue.poll();
-							}
-							
-						
-							
-							if(wasKilled)
-							{
-								continue;
-							}
-							boolean matched = processLine(line);
-							
-							
-							if(matched && matchFound)
-							{
-								log.error("Second output of matching line detected, there is a problem with your wrapper. You can try turning with log all process output enabled to debug: {} ", line);
-								completedAlgorithmRun = ExistingAlgorithmRunResult.getAbortResult(runConfig, "duplicate lines matched");
-								continue;
-							}
-							matchFound = matchFound | matched; 
-						}
-						
-						if(completedAlgorithmRun != null && wasKilled)
-						{
-							if(completedAlgorithmRun.getWallclockExecutionTime() > 1)
-							{ //For very short runs this might not matter.
-								log.warn("Run was killed but we somehow completed this might be a race condition but our result is: {}. This is a warning just so that developers can see this having occurred and judge the correctness" ,completedAlgorithmRun.getResultLine());
-							}
-						}
-						
-						
-						
-						if(!procIn.ready() && exited(p))
-						{
-							//I assume that if the stream isn't ready and the process has exited that 
-							//we have processed everything
+							log.trace("Process has ended");
 							processEnded.set(true);
-							break;
+							break outerloop;
 						}
-						
-						if(!read)
+						outputQueue.add(line);
+						if (outputQueue.size() > MAX_LINES_TO_SAVE)
 						{
-							if(++i % 12000 == 0)
-							{
-								log.trace("Slept for 5 minutes waiting for pid {}  &&  (matching line found?: {} ) " ,getPID(p), matchFound);
-							}
-							Thread.sleep(25);
+							outputQueue.poll();
 						}
-						
-					} while(!processEnded.get());
-				} finally
-				{
-					procIn.close();
-				} 
-			} catch (IOException e) {
-				
-				if(!processEnded.get())
-				{
-					log.trace("IO Exception occurred while processing runs");
-				}
-				
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-				return;
-			
+
+
+
+						if(wasKilled)
+						{
+							continue;
+						}
+						boolean matched = processLine(line);
+
+
+						if(matched && matchFound)
+						{
+							log.error("Second output of matching line detected, there is a problem with your wrapper. You can try turning with log all process output enabled to debug: {} ", line);
+							completedAlgorithmRun = ExistingAlgorithmRunResult.getAbortResult(runConfig, "duplicate lines matched");
+							continue;
+						}
+						matchFound = matchFound | matched;
+					}
+
+					if(completedAlgorithmRun != null && wasKilled)
+					{
+						if(completedAlgorithmRun.getWallclockExecutionTime() > 1)
+						{ //For very short runs this might not matter.
+							log.warn("Run was killed but we somehow completed this might be a race condition but our result is: {}. This is a warning just so that developers can see this having occurred and judge the correctness" ,completedAlgorithmRun.getResultLine());
+						}
+					}
+
+
+
+					if(!procIn.ready() && exited(p))
+					{
+						//I assume that if the stream isn't ready and the process has exited that
+						//we have processed everything
+						processEnded.set(true);
+						break;
+					}
+
+					if(!read)
+					{
+						if(++i % 12000 == 0)
+						{
+							log.trace("Slept for 5 minutes waiting for pid {}  &&  (matching line found?: {} ) " ,getPID(p), matchFound);
+						}
+						Thread.sleep(25);
+					}
+
+				} while(!processEnded.get());
+			} finally
+			{
+				procIn.close();
 			}
-		
-		
+		} catch (IOException e) {
+
+			if(!processEnded.get())
+			{
+				log.trace("IO Exception occurred while processing runs");
+			}
+
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			return;
+
+		}
+
+
 	}
-	
-	
 
 	/**
 	 * Starts the target algorithm
@@ -806,13 +994,13 @@ outerloop:
 		{
 			envpList.add(ent.getKey() + "=" + ent.getValue());
 		}
-		
-		if(options.listenForUpdates)
-		{
-			envpList.add(PORT_ENVIRONMENT_VARIABLE  + "=" + port);
-			envpList.add(FREQUENCY_ENVIRONMENT_VARIABLE + "=" + (this.observerFrequency / 2000.0));
-			
-		}
+//
+//		if(options.listenForUpdates)
+//		{
+//			envpList.add(PORT_ENVIRONMENT_VARIABLE  + "=" + port);
+//			envpList.add(FREQUENCY_ENVIRONMENT_VARIABLE + "=" + (this.observerFrequency / 2000.0));
+//
+//		}
 		
 		envpList.add(CONCURRENT_TASK_ID + "=" + token);
 		envpList.add(envVariableForChildren + "=" + uuid.toString());  
@@ -820,7 +1008,7 @@ outerloop:
 
 		Process proc = Runtime.getRuntime().exec(execCmdArray,envp, new File(runConfig.getAlgorithmExecutionConfiguration().getAlgorithmExecutionDirectory()));
 
-		log.debug("Process for {} started with pid: {} (Environment Variable: {})", this.runConfig, getPID(proc), uuid);
+		log.info("Process for {} started with pid: {} (Environment Variable: {})", this.runConfig, getPID(proc), uuid);
 
 		return proc;
 	}
