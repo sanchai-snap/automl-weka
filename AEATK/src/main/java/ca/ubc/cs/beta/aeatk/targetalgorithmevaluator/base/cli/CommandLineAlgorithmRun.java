@@ -259,7 +259,9 @@ public class CommandLineAlgorithmRun implements Callable<AlgorithmRunResult>{
 	@Override
 	public synchronized AlgorithmRunResult call() 
 	{
-		
+
+		System.out.println("[Threadpool] execute call process : "+Thread.currentThread().getId());
+
 		Thread.currentThread().setName("CLI TAE (Master Thread - TBD)");
 		if(killHandler.isKilled())
 		{
@@ -413,8 +415,9 @@ public class CommandLineAlgorithmRun implements Callable<AlgorithmRunResult>{
 //				};
 				
 				this.startWallclockTimer();
+				System.out.println("[Threadpool] Start run process : "+Thread.currentThread().getId());
 				String processResultString = runProcess();
-
+				System.out.println("[Threadpool] Finish run process : "+Thread.currentThread().getId());
 				boolean isCanProcess = processLine(processResultString);
 
 				if(completedAlgorithmRun == null)

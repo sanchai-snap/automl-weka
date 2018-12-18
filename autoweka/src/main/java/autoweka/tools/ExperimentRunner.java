@@ -62,8 +62,8 @@ public class ExperimentRunner
         TrajectoryParser.main(trajParseArgs);
 
         //And get some predictions/train the model
-        String[] runnerArgs = new String[]{expFolder + File.separator + expName + ".trajectories." + seed, "-savemodel"};
-        TrajectoryPointPredictionRunner.main(runnerArgs);
+//        String[] runnerArgs = new String[]{expFolder + File.separator + expName + ".trajectories." + seed, "-savemodel"};
+//        TrajectoryPointPredictionRunner.main(runnerArgs);
         
         return resultList;
     }

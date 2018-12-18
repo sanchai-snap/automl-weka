@@ -41,9 +41,9 @@ public abstract class Wrapper
     public String run(String[] argsArray)
     {
     	
-    	String pid = ManagementFactory.getRuntimeMXBean().getName();
+//    	String pid = ManagementFactory.getRuntimeMXBean().getName();
 //    	System.out.println("[AutoML] Run subprocess with params "+pid+","+ this.getClass().getName()+","+ Arrays.toString(argsArray));
-    	System.err.println("[AutoML] Run subprocess with params "+pid+","+ this.getClass().getName()+","+ Arrays.toString(argsArray));
+//    	System.err.println("[AutoML] Run subprocess with params "+pid+","+ this.getClass().getName()+","+ Arrays.toString(argsArray));
         LinkedList<String> args = new LinkedList<String>(Arrays.asList(argsArray));
         ArrayList<String> wrapperConstructorArgs = new ArrayList<String>();
         ArrayList<String> wrapperArgs = new ArrayList<String>();

@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -74,7 +75,7 @@ public class ConcurrentAlgorithmRunner {
 	private final AtomicBoolean observerThreadStarted = new AtomicBoolean(false);
 	/**
 	 * Default Constructor 
-	 * @param execConfig	execution configuration of target algorithm
+//	 * @param execConfig	execution configuration of target algorithm
 	 * @param runConfigs	run configurations to execute
 	 * @param numberOfConcurrentExecutions	number of concurrent executions allowed
 	 * @param obs 
@@ -250,18 +251,39 @@ public class ConcurrentAlgorithmRunner {
 			
 			List<AlgorithmRunResult> results = new ArrayList<AlgorithmRunResult>();
 			List<Callable<AlgorithmRunResult>> runsToDo = runs;
-			
-			
+
+			System.out.println("[Threadpool] Runs size is "+runsToDo.size() + ", thread id : "+Thread.currentThread().getId());
+
+			ExecutorService threadPool = Executors.newFixedThreadPool( Math.min(runs.size(), Runtime.getRuntime().availableProcessors()));
+
 			List<Future<AlgorithmRunResult>> futures = p.invokeAll(runsToDo);
-			
-			try 
+//			List<Future<AlgorithmRunResult>> futures = threadPool.invokeAll(runsToDo);
+			System.out.println("[Threadpool] After invoke all, thread id : "+Thread.currentThread().getId());
+
+
+//			AlgorithmRunResult run;
+//			try {
+//				run = runsToDo.get(0).call();
+//				if (run.getRunStatus().equals(RunStatus.ABORT))
+//				{
+//					throw new TargetAlgorithmAbortException(run);
+//				}
+//				results.add(run);
+//			}catch(Exception e){
+//				e.printStackTrace();
+//			}
+//
+//			return results;
+//
+			try
 			{
 				for(Future<AlgorithmRunResult> futRuns : futures)
 				{
 					AlgorithmRunResult run;
 					try {
+						System.out.println("[Threadpool] get futures, thread id : "+Thread.currentThread().getId());
 						run = futRuns.get();
-					} catch (ExecutionException e) 
+					} catch (ExecutionException e)
 					{
 						if(e.getCause() instanceof TargetAlgorithmAbortException)
 						{
@@ -273,10 +295,10 @@ public class ConcurrentAlgorithmRunner {
 					{
 						throw new TargetAlgorithmAbortException(run);
 					}
-					
+
 					results.add(run);
 				}
-				
+
 				return results;
 			} finally
 			{
@@ -284,11 +306,11 @@ public class ConcurrentAlgorithmRunner {
 				{
 					future.cancel(true);
 				}
-				
+
 				runStatusWatchingFuture.cancel(true);
-				
+
 				boolean alreadyStarted = observerThreadStarted.getAndSet(true);
-				
+
 				if(alreadyStarted)
 				{
 					while(!observerThreadTerminated.await(10, TimeUnit.MINUTES))
@@ -297,9 +319,9 @@ public class ConcurrentAlgorithmRunner {
 					}
 				}
 			}
-			
-			
-			
+
+
+
 		} catch (InterruptedException e) {
 			//TODO We probably need to actually abort properly
 			//We can't just let something else do it, I think.
@@ -307,8 +329,8 @@ public class ConcurrentAlgorithmRunner {
 			Thread.currentThread().interrupt();
 			throw new IllegalStateException("Interrupted while processing runs");
 		}
-		
-		
+
+
 	}
 
 }

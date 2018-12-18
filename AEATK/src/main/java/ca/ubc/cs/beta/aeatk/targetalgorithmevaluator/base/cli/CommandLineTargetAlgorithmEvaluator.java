@@ -71,6 +71,7 @@ public class CommandLineTargetAlgorithmEvaluator extends AbstractAsyncTargetAlgo
 		this.asyncExecService = Executors.newFixedThreadPool(options.cores, new SequentiallyNamedThreadFactory("CLI TAE Asynchronous Request Processing"));
 		
 		this.commandLineAlgorithmRunExecutorService = Executors.newFixedThreadPool(options.cores,new SequentiallyNamedThreadFactory("CLI TAE Master Dispatch Thread", true));
+//		this.commandLineAlgorithmRunExecutorService = Executors.newFixedThreadPool(options.cores,new SequentiallyNamedThreadFactory("CLI TAE Master Dispatch Thread", false));
 		
 		
 		this.asyncExecutions = new Semaphore(options.cores,true);
