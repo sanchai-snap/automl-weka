@@ -248,88 +248,88 @@ public class ConcurrentAlgorithmRunner {
 		 * Waits for it to shutdown
 		 * 
 		 */
-		try {
+//		try {
 			
 			List<AlgorithmRunResult> results = new ArrayList<AlgorithmRunResult>();
 			List<Callable<AlgorithmRunResult>> runsToDo = runs;
 
 //			System.out.println("[Threadpool] Runs size is "+runsToDo.size() + ", thread id : "+Thread.currentThread().getId());
 
-			ExecutorService threadPool = Executors.newFixedThreadPool( Math.min(runs.size(), Runtime.getRuntime().availableProcessors()));
+//			ExecutorService threadPool = Executors.newFixedThreadPool( Math.min(runs.size(), Runtime.getRuntime().availableProcessors()));
 
-			List<Future<AlgorithmRunResult>> futures = p.invokeAll(runsToDo);
+//			List<Future<AlgorithmRunResult>> futures = p.invokeAll(runsToDo);
 //			List<Future<AlgorithmRunResult>> futures = threadPool.invokeAll(runsToDo);
 //			System.out.println("[Threadpool] After invoke all, thread id : "+Thread.currentThread().getId());
 
 
-//			AlgorithmRunResult run;
-//			try {
-//				run = runsToDo.get(0).call();
-//				if (run.getRunStatus().equals(RunStatus.ABORT))
-//				{
-//					throw new TargetAlgorithmAbortException(run);
-//				}
-//				results.add(run);
-//			}catch(Exception e){
-//				e.printStackTrace();
-//			}
-//
-//			return results;
-//
-			try
-			{
-				for(Future<AlgorithmRunResult> futRuns : futures)
+			AlgorithmRunResult run;
+			try {
+				run = runsToDo.get(0).call();
+				if (run.getRunStatus().equals(RunStatus.ABORT))
 				{
-					AlgorithmRunResult run;
-					try {
-//						System.out.println("[Threadpool] get futures, thread id : "+Thread.currentThread().getId());
-						run = futRuns.get();
-					} catch (ExecutionException e)
-					{
-						if(e.getCause() instanceof TargetAlgorithmAbortException)
-						{
-							throw (TargetAlgorithmAbortException) e.getCause();
-						}
-						throw new IllegalStateException("Unexpected exception occurred while trying to run algorithm", e);
-					}
-					if (run.getRunStatus().equals(RunStatus.ABORT))
-					{
-						throw new TargetAlgorithmAbortException(run);
-					}
-
-					results.add(run);
+					throw new TargetAlgorithmAbortException(run);
 				}
-
-				return results;
-			} finally
-			{
-				for(Future<AlgorithmRunResult> future : futures)
-				{
-					future.cancel(true);
-				}
-
-				runStatusWatchingFuture.cancel(true);
-
-				boolean alreadyStarted = observerThreadStarted.getAndSet(true);
-
-				if(alreadyStarted)
-				{
-					while(!observerThreadTerminated.await(10, TimeUnit.MINUTES))
-					{
-						log.warn("Awaiting shutdown of Target Algorithm Evaluator Observer Thread did not complete within 10 minutes");
-					}
-				}
+				results.add(run);
+			}catch(Exception e){
+				throw new TargetAlgorithmAbortException("Unexpected Exception ", e);
 			}
 
+			return results;
 
-
-		} catch (InterruptedException e) {
-			//TODO We probably need to actually abort properly
-			//We can't just let something else do it, I think.
-			//Additionally runs are in an invalid state at this point
-			Thread.currentThread().interrupt();
-			throw new IllegalStateException("Interrupted while processing runs");
-		}
+//			try
+//			{
+//				for(Future<AlgorithmRunResult> futRuns : futures)
+//				{
+//					AlgorithmRunResult run;
+//					try {
+////						System.out.println("[Threadpool] get futures, thread id : "+Thread.currentThread().getId());
+//						run = futRuns.get();
+//					} catch (ExecutionException e)
+//					{
+//						if(e.getCause() instanceof TargetAlgorithmAbortException)
+//						{
+//							throw (TargetAlgorithmAbortException) e.getCause();
+//						}
+//						throw new IllegalStateException("Unexpected exception occurred while trying to run algorithm", e);
+//					}
+//					if (run.getRunStatus().equals(RunStatus.ABORT))
+//					{
+//						throw new TargetAlgorithmAbortException(run);
+//					}
+//
+//					results.add(run);
+//				}
+//
+//				return results;
+//			} finally
+//			{
+//				for(Future<AlgorithmRunResult> future : futures)
+//				{
+//					future.cancel(true);
+//				}
+//
+//				runStatusWatchingFuture.cancel(true);
+//
+//				boolean alreadyStarted = observerThreadStarted.getAndSet(true);
+//
+//				if(alreadyStarted)
+//				{
+//					while(!observerThreadTerminated.await(10, TimeUnit.MINUTES))
+//					{
+//						log.warn("Awaiting shutdown of Target Algorithm Evaluator Observer Thread did not complete within 10 minutes");
+//					}
+//				}
+//			}
+//
+//
+//
+//		} catch (InterruptedException e) {
+//			//TODO We probably need to actually abort properly
+//			//We can't just let something else do it, I think.
+//			//Additionally runs are in an invalid state at this point
+//			Thread.currentThread().interrupt();
+//			throw new IllegalStateException("Interrupted while processing runs");
+//		}
 
 
 	}

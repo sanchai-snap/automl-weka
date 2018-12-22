@@ -862,7 +862,9 @@ public class CommandLineAlgorithmRun implements Callable<AlgorithmRunResult>{
 
 			return result.getResultString();
 		} catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			//throw new IOException("Unable to run execute item", e);
+			log.error("Unable to finish processing", e);
 		}
 
 

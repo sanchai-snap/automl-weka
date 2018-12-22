@@ -43,7 +43,7 @@ public class CommandLineTargetAlgorithmEvaluator extends AbstractAsyncTargetAlgo
 	
 	private final ExecutorService asyncExecService;
 	
-	private final ExecutorService commandLineAlgorithmRunExecutorService;
+//	private final ExecutorService commandLineAlgorithmRunExecutorService;
 	private final ExecutorService observerExecutorService = Executors.newCachedThreadPool(new SequentiallyNamedThreadFactory("CLI TAE Observer Threads", true));
 	
 	private final ExecutorService callbackExecutorService = Executors.newCachedThreadPool(new SequentiallyNamedThreadFactory("CLI TAE Callback Threads", true));
@@ -70,7 +70,7 @@ public class CommandLineTargetAlgorithmEvaluator extends AbstractAsyncTargetAlgo
 		executionIDs = new ArrayBlockingQueue<Integer>(options.cores);
 		this.asyncExecService = Executors.newFixedThreadPool(options.cores, new SequentiallyNamedThreadFactory("CLI TAE Asynchronous Request Processing"));
 		
-		this.commandLineAlgorithmRunExecutorService = Executors.newFixedThreadPool(options.cores,new SequentiallyNamedThreadFactory("CLI TAE Master Dispatch Thread", true));
+//		this.commandLineAlgorithmRunExecutorService = Executors.newFixedThreadPool(options.cores,new SequentiallyNamedThreadFactory("CLI TAE Master Dispatch Thread", true));
 //		this.commandLineAlgorithmRunExecutorService = Executors.newFixedThreadPool(options.cores,new SequentiallyNamedThreadFactory("CLI TAE Master Dispatch Thread", false));
 		
 		
@@ -107,7 +107,8 @@ public class CommandLineTargetAlgorithmEvaluator extends AbstractAsyncTargetAlgo
 		try {
 
 			runner = getAlgorithmRunner(runConfigs,runStatusObserver);
-			runs =  runner.run(commandLineAlgorithmRunExecutorService);
+//			runs =  runner.run(commandLineAlgorithmRunExecutorService);
+			runs =  runner.run(null);
 
 		} catch(RuntimeException e) {
 			taeCallback.onFailure(e);
@@ -172,7 +173,7 @@ public class CommandLineTargetAlgorithmEvaluator extends AbstractAsyncTargetAlgo
 		
 		try {
 			this.asyncExecService.shutdown();
-			this.commandLineAlgorithmRunExecutorService.shutdown();
+//			this.commandLineAlgorithmRunExecutorService.shutdown();
 			this.observerExecutorService.shutdown();
 			this.callbackExecutorService.shutdown();
 			
@@ -187,13 +188,13 @@ public class CommandLineTargetAlgorithmEvaluator extends AbstractAsyncTargetAlgo
 			}
 			
 			
-			terminated = this.commandLineAlgorithmRunExecutorService.awaitTermination(10, TimeUnit.SECONDS);
+/*			terminated = this.commandLineAlgorithmRunExecutorService.awaitTermination(10, TimeUnit.SECONDS);
 			
 			while(!terminated)
 			{
 				log.warn("Termination of target algorithm evaluator failed (CLI Runs), outstanding runs must still exist [commandLineAlgorithmRunExecutorService]");
 				terminated = this.commandLineAlgorithmRunExecutorService.awaitTermination(10, TimeUnit.MINUTES);
-			}
+			}*/
 			
 			terminated = this.observerExecutorService.awaitTermination(10, TimeUnit.SECONDS);
 			
@@ -215,7 +216,7 @@ public class CommandLineTargetAlgorithmEvaluator extends AbstractAsyncTargetAlgo
 			log.warn("notifyShutdown() called on " + this.getClass().getSimpleName() + " but was interrupted");
 			Thread.currentThread().interrupt();
 			this.asyncExecService.shutdownNow();
-			this.commandLineAlgorithmRunExecutorService.shutdownNow();
+//			this.commandLineAlgorithmRunExecutorService.shutdownNow();
 			this.observerExecutorService.shutdownNow();
 			this.callbackExecutorService.shutdownNow();
 			return;

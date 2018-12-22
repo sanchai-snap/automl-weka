@@ -155,7 +155,17 @@ public class ClassifierRunner
 //        Instances testing  = mInstanceGenerator.getTestingFromParams(instanceStr);
         Instances trainingSet = mInstanceGenerator.getTraining();
 
-        Properties properties = Util.parsePropertyString(instanceStr);
+        Properties properties = new Properties();
+
+        if("default".equals(instanceStr)){
+            properties.setProperty("seed","0");
+            properties.setProperty("fold","10");
+        }else{
+            try {
+                properties = Util.parsePropertyString(instanceStr);
+            }catch(Exception e) { }
+        }
+
 //        Instances combined = new Instances();
 //        Instances allInstances = mInstanceGenerator.get(instanceStr);
 
