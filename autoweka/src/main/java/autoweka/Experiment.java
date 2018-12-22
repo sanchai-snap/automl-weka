@@ -120,6 +120,9 @@ public class Experiment extends XmlSerializable
     @XmlElement(name="trajectoryPointExtras")
     public List<TrajectoryPointExtra> trajectoryPointExtras = new ArrayList<TrajectoryPointExtra>();
 
+    @XmlElement(name="experimentKey")
+    public String experimentKey;
+
     /**
      * Class capturing any of the extra dataset partitions that should be run on all the trajectory points for analysis
      */

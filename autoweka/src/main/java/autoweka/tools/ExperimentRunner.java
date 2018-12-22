@@ -58,8 +58,8 @@ public class ExperimentRunner
         List<String> resultList = Experiment.runMain(expArgs);
 
         //Extract the trajectory
-        String[] trajParseArgs = new String[]{"-single", expFolder, seed};
-        TrajectoryParser.main(trajParseArgs);
+//        String[] trajParseArgs = new String[]{"-single", expFolder, seed};
+//        TrajectoryParser.main(trajParseArgs);
 
         //And get some predictions/train the model
 //        String[] runnerArgs = new String[]{expFolder + File.separator + expName + ".trajectories." + seed, "-savemodel"};

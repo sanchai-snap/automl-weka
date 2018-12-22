@@ -12,6 +12,7 @@ import java.util.Queue;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
+import ca.ubc.cs.datastore.CrossValidateResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +77,7 @@ public class SubProcessWrapper extends Wrapper
      * @param res The classifier result.
      */
     @Override
-    protected String _processResults(ClassifierResult res)
+    protected CrossValidateResult _processResults(ClassifierResult res)
     {
         System.out.print("SubProcessWrapper: Time(" + res.getTime() + ") Score(" + res.getScore() + ")");
         String outputFilePrefix = mProperties.getProperty("modelOutputFilePrefix", null);
@@ -95,7 +96,7 @@ public class SubProcessWrapper extends Wrapper
                 throw new RuntimeException(e);
             }
         }
-        return "";
+        return null;
     }
 
     /**

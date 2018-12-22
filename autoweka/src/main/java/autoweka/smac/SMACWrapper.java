@@ -1,20 +1,12 @@
 package autoweka.smac;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
-
-import java.util.Properties;
 import java.util.Queue;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Collections;
 
 import autoweka.Wrapper;
 import autoweka.ClassifierResult;
-import autoweka.Util;
+import ca.ubc.cs.datastore.CrossValidateResult;
 
 public class SMACWrapper extends Wrapper
 {
@@ -55,7 +47,7 @@ public class SMACWrapper extends Wrapper
     }
 
     @Override
-    protected String _processResults(ClassifierResult res)
+    protected CrossValidateResult _processResults(ClassifierResult res)
     {
         //Get the score
         double score = res.getScore();
@@ -100,6 +92,18 @@ public class SMACWrapper extends Wrapper
         //Print the result string
         String resultString = "Result for ParamILS: " + resultStr + ", " + res.getTime() + ", 0, " + score + ", " + mExperimentSeed + ", EXTRA " + extraResultsSB.toString();
         System.out.println(resultString);
-        return resultString;
+
+        CrossValidateResult crossValidateResult = new CrossValidateResult();
+        crossValidateResult.setMatricValue(res.getRawScore());
+        crossValidateResult.setComplete(res.getCompleted());
+        crossValidateResult.setCrossValidationString( res.getClassifier().toString());
+        crossValidateResult.setResultString(resultString);
+        crossValidateResult.setEvaluation(res.getEvaluation());
+        crossValidateResult.setClassifier(res.getClassifier());
+        crossValidateResult.setClassifierArgs(res.getClassiferArgsArray());
+        crossValidateResult.setAttributeSelection(res.getAttributeSelection());
+        crossValidateResult.setCrossValidationString(res.getModelString());
+
+        return crossValidateResult;
     }
 }

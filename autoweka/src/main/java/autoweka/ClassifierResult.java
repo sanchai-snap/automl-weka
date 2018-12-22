@@ -312,6 +312,9 @@ public class ClassifierResult
     private Metric mMetric = null;
     private double mPercentEvaluated = 0;
     private boolean mMemOut;
+    private Evaluation evaluation;
+    private String[] classifierArgs;
+    private String modelString;
 
     public ClassifierResult(String str)
     {
@@ -337,6 +340,7 @@ public class ClassifierResult
     }
 
     public void setScoreFromEval(Evaluation eval, Instances testingData) {
+        evaluation = eval;
         mRawScore = mMetric.getScore(eval, testingData);
 
         if(Double.isInfinite(mRawScore)) {
@@ -450,5 +454,30 @@ public class ClassifierResult
     public boolean getMemOut()
     {
         return mMemOut;
+    }
+
+    public Evaluation getEvaluation() {
+        return evaluation;
+    }
+
+    public void setEvaluation(Evaluation evaluation) {
+        this.evaluation = evaluation;
+    }
+
+    public void setClassiferArgsArray(String[] argsArray) {
+        this.classifierArgs = argsArray;
+
+    }
+
+    public String[] getClassiferArgsArray() {
+        return this.classifierArgs;
+    }
+
+    public String getModelString() {
+        return modelString;
+    }
+
+    public void setModelString(String modelString) {
+        this.modelString = modelString;
     }
 }

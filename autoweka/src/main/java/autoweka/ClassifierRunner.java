@@ -3,6 +3,7 @@ package autoweka;
 import weka.classifiers.Evaluation;
 import weka.classifiers.AbstractClassifier;
 import weka.classifiers.evaluation.output.prediction.CSV;
+import weka.core.Attribute;
 import weka.core.Instances;
 import weka.core.Instance;
 
@@ -10,6 +11,7 @@ import java.io.File;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import weka.attributeSelection.ASEvaluation;
@@ -17,6 +19,7 @@ import weka.attributeSelection.ASSearch;
 import weka.attributeSelection.AttributeSelection;
 import java.util.Map;
 import java.util.Arrays;
+import java.util.Random;
 
 
 import org.slf4j.Logger;
@@ -148,8 +151,13 @@ public class ClassifierRunner
     	log.warn(" [AutoML] current stackthread : {}, {}", this.getClass().getName(), Arrays.toString(Thread.currentThread().getStackTrace()));
 
         //The first arg contains stuff we need to pass to the instance generator
-        Instances training = mInstanceGenerator.getTrainingFromParams(instanceStr);
-        Instances testing  = mInstanceGenerator.getTestingFromParams(instanceStr);
+//        Instances training = mInstanceGenerator.getTrainingFromParams(instanceStr);
+//        Instances testing  = mInstanceGenerator.getTestingFromParams(instanceStr);
+        Instances trainingSet = mInstanceGenerator.getTraining();
+
+        Properties properties = Util.parsePropertyString(instanceStr);
+//        Instances combined = new Instances();
+//        Instances allInstances = mInstanceGenerator.get(instanceStr);
 
         //Next, start into the arguments that are for the actual classifier
         WekaArgumentConverter.Arguments wekaArgs = WekaArgumentConverter.convert(args);
@@ -158,6 +166,11 @@ public class ClassifierRunner
 
         //Build a result with the appropriate fields
         ClassifierResult res = new ClassifierResult(resultMetric);
+
+        // Create Model String
+        String modelString = propertyMap.get("targetclass") +" seed = "+properties.getProperty("seed")+", fold = "+properties.getProperty("fold") +" "+ Arrays.toString(args.toArray());
+
+        res.setModelString(modelString);
 
         //See if we should do some attribute searching
         String attribSearchClassName = propertyMap.get("attributesearch");
@@ -193,7 +206,8 @@ public class ClassifierRunner
             attribSelect.setEvaluator(asEval);
             attribSelect.setSearch(asSearch);
 
-            AttributeSelectorThread asThread = new AttributeSelectorThread(attribSelect, training);
+
+            AttributeSelectorThread asThread = new AttributeSelectorThread(attribSelect, trainingSet);
 
             disableOutput();
             float asTime = asThread.runWorker(attribTimeout);
@@ -220,13 +234,14 @@ public class ClassifierRunner
                 {
                     //Filter the instances
                     int[] attrs = attribSelect.selectedAttributes();
-                    log.debug("Using {}% attributes:", (100.0*(attrs.length) / training.numAttributes()));
+                    log.debug("Using {}% attributes:", (100.0*(attrs.length) / trainingSet.numAttributes()));
                     for(int i = 0; i < attrs.length; i++){
                         log.debug("{}", i);
                     }
-                    training = attribSelect.reduceDimensionality(training);
-                    testing = attribSelect.reduceDimensionality(testing);
-                    log.debug("Target class: {}", training.classAttribute());
+//                    training = attribSelect.reduceDimensionality(training);
+//                    testing = attribSelect.reduceDimensionality(testing);
+                    trainingSet = attribSelect.reduceDimensionality(trainingSet);
+                    log.debug("Target class: {}", trainingSet.classAttribute());
                 }catch(Exception e){
                     throw new RuntimeException(e);
                 }
@@ -256,6 +271,7 @@ public class ClassifierRunner
         {
             classifier = (AbstractClassifier) AbstractClassifier.forName(targetClassifierName, argsArray);
             res.setClassifier(classifier);
+            res.setClassiferArgsArray(argsArraySaved);
         }
         catch(ClassNotFoundException e)
         {
@@ -282,39 +298,66 @@ public class ClassifierRunner
         }
 
         //Prepare to train the critter
-        BuilderThread builderThread = new BuilderThread(classifier, training);
+//        BuilderThread builderThread = new BuilderThread(classifier, training);
+//
+//        disableOutput();
+//        float trainingTime = builderThread.runWorker(timeout);
+//        enableOutput();
+//
+//        res.setTrainingTime(trainingTime);
+//
+//        if(builderThread.getException() != null)
+//        {
+//            log.warn("Training classifier ({} {}) failed: {}", targetClassifierName, argsArraySaved, builderThread.getException().getMessage(), builderThread.getException());
+//            res.setMemOut(builderThread.getException().getCause() instanceof OutOfMemoryError);
+//        }
+//
+//        //If we had to stop/got an exception, we need to report a false run
+//        if(builderThread.getException() != null || builderThread.terminated())
+//        {
+//            builderThread = null;
+//            res.setCompleted(false);
+//            return res;
+//        }
+//        else
+//        {
+//            //We have a good result so far
+//            res.setCompleted(true);
+//        }
+//
+//        log.debug("Performing evaluation on {} instances.", trainingSet.numInstances());
+//
+//        //Get the evaluation
+//        if(!_evaluateClassifierOnInstances(classifier, res, trainingSet, timeout,args,instanceStr)){
+//          return res;
+//        }
 
-        disableOutput();
-        float trainingTime = builderThread.runWorker(timeout);
-        enableOutput();
+        int seed = 0;
+        try{
+            seed = Integer.parseInt(properties.getProperty("seed"));
+        }catch(Exception e) { }
 
-        res.setTrainingTime(trainingTime);
+        int foldNo = 10;
+        try{
+            foldNo = Integer.parseInt(properties.getProperty("fold"));
+            if(foldNo < 2)
+                foldNo = 2;
+        }catch(Exception e){ }
 
-        if(builderThread.getException() != null)
-        {
-            log.warn("Training classifier ({} {}) failed: {}", targetClassifierName, argsArraySaved, builderThread.getException().getMessage(), builderThread.getException());
-            res.setMemOut(builderThread.getException().getCause() instanceof OutOfMemoryError);
-        }
+        Evaluation eval = null;
+        try {
+            eval = new Evaluation(trainingSet);
+            eval.crossValidateModel(classifier, trainingSet, foldNo, new Random(seed));
 
-        //If we had to stop/got an exception, we need to report a false run
-        if(builderThread.getException() != null || builderThread.terminated())
-        {
-            builderThread = null;
-            res.setCompleted(false);
-            return res;
-        }
-        else
-        {
-            //We have a good result so far
             res.setCompleted(true);
+            res.setPercentEvaluated(100.0f*(float)(1.0f - eval.unclassified() / trainingSet.numInstances()));
+            res.setScoreFromEval(eval, trainingSet);
+            saveConfiguration(res,args,instanceStr);
+        } catch (Exception e) {
+            e.printStackTrace();
+            res.setCompleted(false);
         }
 
-        log.debug("Performing evaluation on {} instances.", testing.numInstances());
-
-        //Get the evaluation
-        if(!_evaluateClassifierOnInstances(classifier, res, testing, timeout,args,instanceStr)){
-          return res;
-        }
 
         // write out configuration info
         log.info("{};{};{};{};{};{};{};{}",
@@ -323,7 +366,7 @@ public class ClassifierRunner
         attribSearchClassName, argMap.get("attributesearch"),
         instanceStr, res.getRawScore());
 
-        log.debug("Num Training: {}, num testing: {}", training.numInstances(), testing.numInstances());
+//        log.debug("Num Training: {}, num testing: {}", training.numInstances(), testing.numInstances());
         return res;
     }
 

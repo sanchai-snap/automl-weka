@@ -125,7 +125,13 @@ public class SMACExperimentConstructor extends ExperimentConstructor
 
         args.add("--validation-cores");
         args.add(coreNo+"");
-        
+
+        args.add("--experiment-key");
+        args.add(mExperiment.experimentKey);
+
+        args.add("--cli-experiment-key");
+        args.add(mExperiment.experimentKey);
+
         if(props.containsKey("deterministicInstanceOrdering"))
         {
             //throw new RuntimeException("This option only works on a hacked up version of SMAC");

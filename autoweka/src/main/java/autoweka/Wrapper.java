@@ -7,8 +7,8 @@ import java.util.Properties;
 import java.util.ArrayList;
 import java.util.Queue;
 import java.io.FileInputStream;
-import java.lang.management.ManagementFactory;
 
+import ca.ubc.cs.datastore.CrossValidateResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +38,7 @@ public abstract class Wrapper
      * Runs the wrapper with the given command line arguments - see the class description for full details
      * @param argsArray The list of arguments.
      */
-    public String run(String[] argsArray)
+    public CrossValidateResult run(String[] argsArray)
     {
     	
 //    	String pid = ManagementFactory.getRuntimeMXBean().getName();
@@ -218,5 +218,5 @@ public abstract class Wrapper
     /*
      * Called once the run has completed (or been terminated), the results should be sent back to the SMBO method here
      */
-    protected abstract String _processResults(ClassifierResult res);
+    protected abstract CrossValidateResult _processResults(ClassifierResult res);
 }
