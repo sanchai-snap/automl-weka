@@ -252,6 +252,10 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
         runClassifier(new AutoWEKAClassifier(), argv);
     }
 
+    public void runMain(String[] args){
+        runClassifier(this, args);
+    }
+
     /** Constructs a new AutoWEKAClassifier. */
     public AutoWEKAClassifier() {
         classifier = null;
