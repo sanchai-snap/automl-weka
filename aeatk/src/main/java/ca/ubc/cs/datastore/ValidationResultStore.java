@@ -31,4 +31,8 @@ public class ValidationResultStore {
     public RunResultHistory pollRunResultHistory(String runKey){
         return runResultMap.remove(runKey);
     }
+
+    public RunResultHistory getEmptyResult(){
+        return new RunResultHistory();
+    }
 }

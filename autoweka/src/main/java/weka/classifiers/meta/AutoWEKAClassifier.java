@@ -482,11 +482,13 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
 //            eval = new Evaluation(is);
 //            eval.evaluateModel(classifier, is);
 
+        }catch(Exception e){
+            e.printStackTrace();
         }finally{
             runResultHistory = ValidationResultStore.getInstance().pollRunResultHistory(experimentKey);
         }
 
-        if(runResultHistory.size() > 0){
+        if(runResultHistory != null && runResultHistory.size() > 0){
             CrossValidateResult result = runResultHistory.getBestResult();
             Evaluation eval = result.getEvaluation();
             log.info(" {}, {} ", eval.incorrect(), eval.pctIncorrect());
@@ -511,11 +513,16 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
             eval = new Evaluation(is);
             eval.evaluateModel(classifier, is);
 
+            for(CrossValidateResult history : runResultHistory.getResultList()){
+                log.info(" {}, {} ", history.getClassifier());
+            }
+
+        }else{
+            // default empty set
+            runResultHistory = ValidationResultStore.getInstance().getEmptyResult();
         }
 
-        for(CrossValidateResult history : runResultHistory.getResultList()){
-            log.info(" {}, {} ", history.getClassifier());
-        }
+
     }
 
     protected void buildExperimentConstructor(Experiment exp, List<String> args) {

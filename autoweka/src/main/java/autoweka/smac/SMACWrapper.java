@@ -91,7 +91,7 @@ public class SMACWrapper extends Wrapper
 
         //Print the result string
         String resultString = "Result for ParamILS: " + resultStr + ", " + res.getTime() + ", 0, " + score + ", " + mExperimentSeed + ", EXTRA " + extraResultsSB.toString();
-        System.out.println(resultString);
+//        System.out.println(resultString);
 
         CrossValidateResult crossValidateResult = new CrossValidateResult();
         crossValidateResult.setMatricValue(res.getRawScore());
