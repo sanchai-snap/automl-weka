@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 public class AutoWEKAClassifierConcurrent {
 
-    @Test
+//    @Test
     public void concurrentCall() throws InterruptedException, ExecutionException {
         final String[] args = {"-t","/Users/jumpai/Downloads/iris.arff", "-seed", "123", "-timeLimit", "60", "-no-cv"};
         final String[] args2 = {"-t","/Users/jumpai/Downloads/iris.arff", "-seed", "124", "-timeLimit", "60", "-no-cv"};
