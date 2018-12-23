@@ -204,9 +204,9 @@ public class Experiment extends XmlSerializable
     }
     
     public static List<String> runMain(String[] args){
-    	
+
     	List<String> resultList = new ArrayList<>();
-    	
+
         //Load an experiment and seed from the args
         File experiment = null;
         String seed = null;
@@ -242,7 +242,7 @@ public class Experiment extends XmlSerializable
                 exp.callString.set(i, exp.callString.get(i).replace("{SEED}", seed));
                 log.debug("{}", exp.callString.get(i));
             }
-            
+
             Util.makePath(experiment.getParentFile() + File.separator + "out" + File.separator + "logs");
             Util.makePath(experiment.getParentFile() + File.separator + "out" + File.separator + "runstamps");
 
@@ -251,20 +251,21 @@ public class Experiment extends XmlSerializable
             stampFile.deleteOnExit();
 
             /*
-             * 
+             *
              *  Section for run in the same JVM
              */
             // remove smac configuration path
 //            exp.callString.remove(0);
-            
-            
-            int returnValue = SMACExecutor.oldMain(exp.callString.toArray(new String[0]));
-    		
+
+
+            SMACExecutor smacExecutor = new SMACExecutor();
+            int returnValue = smacExecutor.oldMain(exp.callString.toArray(new String[0]));
+
     		if(log != null)
     		{
     			log.debug("Returning with value: {}",returnValue);
     		}
-            
+
             /*
              * Section for actually run as sub process
              */
@@ -293,16 +294,16 @@ public class Experiment extends XmlSerializable
 //            env.put("AUTOWEKA_EXPERIMENT_SEED", seed);
 //
 //            log.warn("Execute from experiement : "+ Arrays.toString(pb.command().toArray()));
-//            
+//
 //            Process proc = pb.start();
-//            
+//
 //            //Register a shutdown hook
 //            Runtime.getRuntime().addShutdownHook(new Util.ProcessKillerShutdownHook(proc));
 //
 //            String line;
 //            BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 //            BufferedWriter logOutput = new BufferedWriter(new FileWriter(experiment.getParentFile() + File.separator + "out" + File.separator + "logs" + File.separator + seed + ".log"));
-//            
+//
 //            while ((line = reader.readLine ()) != null) {
 //                // fix nested logging...
 //                if(line.matches(".*Result for ParamILS:.*")) {
@@ -330,18 +331,18 @@ public class Experiment extends XmlSerializable
 //            }
 
             //And we might as well do the trajectory parse
-            TrajectoryParser.main(new String[]{"-single", URLDecoder.decode(expFolder.getAbsolutePath()), seed});
+//            TrajectoryParser.main(new String[]{"-single", URLDecoder.decode(expFolder.getAbsolutePath()), seed});
 
 //            if(!noExit)
 //                System.exit(proc.waitFor());
-            
+
         }
         catch(Exception e)
         {
             log.error(e.getMessage(), e);
 //            System.exit(1);
         }
-        
+
         return resultList;
     }
 

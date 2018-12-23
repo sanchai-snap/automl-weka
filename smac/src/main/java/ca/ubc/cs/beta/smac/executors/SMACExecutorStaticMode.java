@@ -1,27 +1,5 @@
 package ca.ubc.cs.beta.smac.executors;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.lang.management.ManagementFactory;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.text.DecimalFormat;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.Map.Entry;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Marker;
-import org.slf4j.MarkerFactory;
-
 import ca.ubc.cs.beta.aeatk.algorithmexecutionconfiguration.AlgorithmExecutionConfiguration;
 import ca.ubc.cs.beta.aeatk.exceptions.StateSerializationException;
 import ca.ubc.cs.beta.aeatk.exceptions.TrajectoryDivergenceException;
@@ -58,27 +36,61 @@ import ca.ubc.cs.beta.smac.configurator.AbstractAlgorithmFramework;
 import ca.ubc.cs.beta.smac.misc.version.SMACVersionInfo;
 import ca.ubc.cs.beta.smac.validation.ValidationResult;
 import ca.ubc.cs.beta.smac.validation.Validator;
-
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
-public class SMACExecutor {
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.lang.management.ManagementFactory;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.text.DecimalFormat;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
+public class SMACExecutorStaticMode {
 
 	
 	private static Logger log;
-	private Marker exception;
-	private Marker stackTrace;
+	private static Marker exception;
+	private static Marker stackTrace;
 	
-	private String logLocation = "<NO LOG LOCATION SPECIFIED, FAILURE MUST HAVE OCCURED EARLY>";
-
-	private InstanceListWithSeeds trainingILWS;
-	private InstanceListWithSeeds testingILWS;
+	private static String logLocation = "<NO LOG LOCATION SPECIFIED, FAILURE MUST HAVE OCCURED EARLY>";
+	
+	/*
+	private static List<ProblemInstance> instances;
+	private static List<ProblemInstance> testInstances;
+	
+	private static InstanceSeedGenerator instanceSeedGen;
+	private static InstanceSeedGenerator testInstanceSeedGen;
 	
 	
-	private Map<String,  AbstractOptions> taeOptions;
-	private SeedableRandomPool pool;
 	
-	private String outputDir;
+	private static String instanceFileAbsolutePath;
+	private static String instanceFeatureFileAbsolutePath;
+	*/
+	
+	
+	private static InstanceListWithSeeds trainingILWS;
+	private static InstanceListWithSeeds testingILWS;
+	
+	
+	private static Map<String,  AbstractOptions> taeOptions;
+	private static SeedableRandomPool pool;
+	
+	private static String outputDir;
 	
 	/**
 	 * Executes SMAC then exits the JVM {@see System.exit()}
@@ -87,8 +99,7 @@ public class SMACExecutor {
 	 */
 	public static void main(String[] args)
 	{
-		SMACExecutor smacExecutor = new SMACExecutor();
-		int returnValue = smacExecutor.oldMain(args);
+		int returnValue = oldMain(args);
 		
 		if(log != null)
 		{
@@ -104,7 +115,7 @@ public class SMACExecutor {
 	 * @param args 	string input arguments
 	 * @return return value for operating system
 	 */
-	public int oldMain(String[] args)
+	public static int oldMain(String[] args)
 	{
 		/*
 		 * WARNING: DO NOT LOG ANYTHING UNTIL AFTER WE HAVE PARSED THE CLI OPTIONS
@@ -412,7 +423,7 @@ public class SMACExecutor {
 	 * @param args
 	 * @return
 	 */
-	private SMACOptions parseCLIOptions(String[] args) throws ParameterException, IOException
+	private static SMACOptions parseCLIOptions(String[] args) throws ParameterException, IOException
 	{
 		//DO NOT LOG UNTIL AFTER WE PARSE CONFIG OBJECT
 		
@@ -496,9 +507,9 @@ public class SMACExecutor {
 			{
 				
 				options.logOptions.initializeLogging(outputDir, options.seedOptions.numRun);
-				logLocation = options.logOptions.getLogLocation(outputDir,options.seedOptions.numRun);
+				SMACExecutorStaticMode.logLocation = options.logOptions.getLogLocation(outputDir,options.seedOptions.numRun);
 				
-				log = LoggerFactory.getLogger(SMACExecutor.class);
+				log = LoggerFactory.getLogger(SMACExecutorStaticMode.class);
 				
 				exception = MarkerFactory.getMarker("EXCEPTION");
 				stackTrace = MarkerFactory.getMarker("STACKTRACE");
