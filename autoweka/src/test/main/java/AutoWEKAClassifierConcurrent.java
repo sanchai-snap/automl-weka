@@ -20,12 +20,12 @@ public class AutoWEKAClassifierConcurrent {
         Callable<AutoWEKAClassifier> callable = new Callable<AutoWEKAClassifier>() {
             @Override
             public AutoWEKAClassifier call() throws Exception {
-//                AutoWEKAClassifier classifier = new AutoWEKAClassifier();
-//                classifier.runMain(args);
+                AutoWEKAClassifier classifier = new AutoWEKAClassifier();
+                classifier.runMain(args);
 //                System.out.println("Running 1");
-                AutoWEKAClassifier.main(args);
-//                return classifier;
-                return null;
+//                AutoWEKAClassifier.main(args);
+                return classifier;
+//                return null;
             }
         };
 
@@ -33,6 +33,7 @@ public class AutoWEKAClassifierConcurrent {
             @Override
             public AutoWEKAClassifier call() throws Exception {
                 AutoWEKAClassifier classifier = new AutoWEKAClassifier();
+//                Thread.sleep(200);
                 classifier.runMain(args2);
 //                System.out.println("Running 2");
                 return classifier;
@@ -41,14 +42,14 @@ public class AutoWEKAClassifierConcurrent {
 
         List<Callable<AutoWEKAClassifier>> callableList = new ArrayList<>();
         callableList.add(callable);
-//        callableList.add(callable2);
+        callableList.add(callable2);
         ExecutorService executor = Executors.newFixedThreadPool(2);
         List<Future<AutoWEKAClassifier>> futures = executor.invokeAll(callableList);
 
 //        executor.awaitTermination(10, TimeUnit.MINUTES);
         for( Future<AutoWEKAClassifier> future : futures){
             AutoWEKAClassifier classifier =  future.get();
-            System.out.println("Result :" + classifier);
+            System.out.println("Result Future:" + classifier);
         }
     }
 

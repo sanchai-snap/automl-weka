@@ -74,10 +74,10 @@ import autoweka.ConfigurationCollection;
 public class AutoWEKAClassifier extends AbstractClassifier implements AdditionalMeasureProducer {
 
     /** For serialization. */
-    static final long serialVersionUID = 2907034203562786373L;
+    private static final long serialVersionUID = 2907034203562786373L;
 
     /** For logging Auto-WEKA's output. */
-    final Logger log = LoggerFactory.getLogger(AutoWEKAClassifier.class);
+    private transient final Logger log = LoggerFactory.getLogger(AutoWEKAClassifier.class);
 
     /** Default time limit for Auto-WEKA. */
     static final int DEFAULT_TIME_LIMIT = 15;
@@ -253,7 +253,11 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
     }
 
     public void runMain(String[] args){
-        runClassifier(this, args);
+        try {
+            runClassifier(this, args);
+        }catch(Exception e){
+            log.error("Result Future: ", e);
+        }
     }
 
     /** Constructs a new AutoWEKAClassifier. */
@@ -487,7 +491,8 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
 //            eval.evaluateModel(classifier, is);
 
         }catch(Exception e){
-            e.printStackTrace();
+            log.error("Result Future: ",e);
+//            e.printStackTrace();
         }finally{
             runResultHistory = ValidationResultStore.getInstance().pollRunResultHistory(experimentKey);
         }
