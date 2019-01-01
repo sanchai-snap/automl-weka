@@ -112,7 +112,7 @@ public class VerifyScenarioExecutor {
 		{
 			log.info("Error occured: {}", e.getMessage());
 			log.debug("Exception",e);
-			System.exit(AEATKReturnValues.PARAMETER_EXCEPTION);
+//			System.exit(AEATKReturnValues.PARAMETER_EXCEPTION);
 		}
 	}
 	

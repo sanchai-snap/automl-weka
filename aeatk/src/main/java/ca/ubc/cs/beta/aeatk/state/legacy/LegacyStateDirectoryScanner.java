@@ -28,13 +28,15 @@ public class LegacyStateDirectoryScanner {
 		if(!restoreDirectory.exists())
 		{
 			System.err.println("[ERROR] Restore directory doesn't exist: " + restoreDirectory);
-			System.exit(1);
+//			System.exit(1);
+			throw new IllegalArgumentException();
 		}
 		
 		if(!restoreDirectory.isDirectory())
 		{
 			System.err.println("[ERROR] Restore directory isn't actually a directory: " + restoreDirectory);
-			System.exit(1);
+			//System.exit(1);
+			throw new IllegalArgumentException();
 		}
 		
 		

@@ -84,7 +84,7 @@ public class ClassifierRunner
 
         public RunnerThread(String _instanceStr, String _resultMetric, float _timeout, String _mSeed, List<String> _args)
         {
-        	log.warn("[AutoML] runner thread created : {}", Arrays.toString(Thread.currentThread().getStackTrace()));
+//        	log.warn("[AutoML] runner thread created : {}", Arrays.toString(Thread.currentThread().getStackTrace()));
             instanceStr = _instanceStr;
             resultMetric = _resultMetric;
             timeout = _timeout;
@@ -148,7 +148,7 @@ public class ClassifierRunner
      */
     private ClassifierResult _run(String instanceStr, String resultMetric, float timeout, String mSeed, List<String> args)
     {
-    	log.warn(" [AutoML] current stackthread : {}, {}", this.getClass().getName(), Arrays.toString(Thread.currentThread().getStackTrace()));
+//    	log.warn(" [AutoML] current stackthread : {}, {}", this.getClass().getName(), Arrays.toString(Thread.currentThread().getStackTrace()));
 
         //The first arg contains stuff we need to pass to the instance generator
 //        Instances training = mInstanceGenerator.getTrainingFromParams(instanceStr);
@@ -220,7 +220,8 @@ public class ClassifierRunner
             AttributeSelectorThread asThread = new AttributeSelectorThread(attribSelect, trainingSet);
 
             disableOutput();
-            float asTime = asThread.runWorker(attribTimeout);
+//            float asTime = asThread.runWorker(attribTimeout);
+            float asTime = asThread.runWorker(Integer.MAX_VALUE);
             enableOutput();
             res.setAttributeSelectionTime(asTime);
 
@@ -243,11 +244,11 @@ public class ClassifierRunner
                 try
                 {
                     //Filter the instances
-                    int[] attrs = attribSelect.selectedAttributes();
-                    log.debug("Using {}% attributes:", (100.0*(attrs.length) / trainingSet.numAttributes()));
-                    for(int i = 0; i < attrs.length; i++){
-                        log.debug("{}", i);
-                    }
+//                    int[] attrs = attribSelect.selectedAttributes();
+//                    log.debug("Using {}% attributes:", (100.0*(attrs.length) / trainingSet.numAttributes()));
+//                    for(int i = 0; i < attrs.length; i++){
+//                        log.debug("{}", i);
+//                    }
 //                    training = attribSelect.reduceDimensionality(training);
 //                    testing = attribSelect.reduceDimensionality(testing);
                     trainingSet = attribSelect.reduceDimensionality(trainingSet);
@@ -280,6 +281,9 @@ public class ClassifierRunner
         try
         {
             classifier = (AbstractClassifier) AbstractClassifier.forName(targetClassifierName, argsArray);
+
+
+
             res.setClassifier(classifier);
             res.setClassiferArgsArray(argsArraySaved);
         }
@@ -364,6 +368,7 @@ public class ClassifierRunner
             res.setScoreFromEval(eval, trainingSet);
             saveConfiguration(res,args,instanceStr);
         } catch (Exception e) {
+            log.error("Cannot build model ", e);
             e.printStackTrace();
             res.setCompleted(false);
         }
@@ -395,7 +400,7 @@ public class ClassifierRunner
             EvaluatorThread evalThread = new EvaluatorThread(eval, classifier, instances, mPredictionsFileName);
 
             disableOutput();
-            float evalTime = evalThread.runWorker(timeout);
+            float evalTime = evalThread.runWorker(Float.MAX_VALUE);
             enableOutput();
             res.setEvaluationTime(evalTime);
 

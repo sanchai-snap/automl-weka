@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
  */
 abstract class WorkerThread extends Thread
 {
-    final Logger log = LoggerFactory.getLogger(WorkerThread.class);
+    private static final Logger log = LoggerFactory.getLogger(WorkerThread.class);
 
     private com.sun.management.OperatingSystemMXBean mOSBean = (com.sun.management.OperatingSystemMXBean) java.lang.management.ManagementFactory.getOperatingSystemMXBean();
     private static final int msPollInterval = 5;
@@ -120,7 +120,7 @@ abstract class WorkerThread extends Thread
             }
 
             //Are we at a point where we need to kill the sucker?
-            if(!interrupted && (mOSBean.getProcessCpuTime() - startTime > timeout /*|| wallTime > timeout * mWalltimeMultiplyer*/))
+            if(!interrupted /* && (mOSBean.getProcessCpuTime() - startTime > timeout) */)
             {
                 //Try to interrupt the bugger
                 this.interrupt();
@@ -128,7 +128,7 @@ abstract class WorkerThread extends Thread
                 log.debug("{} interrupted", getOpName());
                 interrupted = true;
             }
-            else if(!stopped && (mOSBean.getProcessCpuTime() - startTime > timeout * msTimeoutMultiplyer /*|| wallTime > timeout * mWalltimeMultiplyer * mTimeoutMultiplyer*/))
+            else if(!stopped /*&& (mOSBean.getProcessCpuTime() - startTime > timeout * msTimeoutMultiplyer)*/)
             {
                 //Try to interrupt the bugger
                 this.terminate();

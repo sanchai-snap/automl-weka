@@ -523,7 +523,7 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
             eval.evaluateModel(classifier, is);
 
             for(CrossValidateResult history : runResultHistory.getResultList()){
-                log.info(" {}, {} ", history.getClassifier());
+                log.info(" {}, {} ", history.getEvaluation().kappa());
             }
 
         }else{
