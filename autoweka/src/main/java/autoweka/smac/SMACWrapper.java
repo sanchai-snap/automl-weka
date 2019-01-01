@@ -89,8 +89,8 @@ public class SMACWrapper extends Wrapper
 
         extraResultsSB.append(res.getPercentEvaluated());
 
-        if(res.getClassifier() == null){
-            System.out.println(res);
+        if(!res.getCompleted()){
+            return null;
         }
 
         //Print the result string

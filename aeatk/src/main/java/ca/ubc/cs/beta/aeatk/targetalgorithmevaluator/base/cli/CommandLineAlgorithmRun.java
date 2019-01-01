@@ -854,6 +854,9 @@ public class CommandLineAlgorithmRun implements Callable<AlgorithmRunResult>{
 
 			Object runResult = method.invoke(runnerObject, methodParams);
 
+			if(runResult == null){
+				return "";
+			}
 			CrossValidateResult result = (CrossValidateResult) runResult;
 
 			ValidationResultStore store = ValidationResultStore.getInstance();

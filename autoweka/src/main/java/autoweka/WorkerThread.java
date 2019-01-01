@@ -120,7 +120,7 @@ abstract class WorkerThread extends Thread
             }
 
             //Are we at a point where we need to kill the sucker?
-            if(!interrupted /* && (mOSBean.getProcessCpuTime() - startTime > timeout) */)
+            if(!interrupted  && (mOSBean.getProcessCpuTime() - startTime > timeout) )
             {
                 //Try to interrupt the bugger
                 this.interrupt();
@@ -128,7 +128,8 @@ abstract class WorkerThread extends Thread
                 log.debug("{} interrupted", getOpName());
                 interrupted = true;
             }
-            else if(!stopped /*&& (mOSBean.getProcessCpuTime() - startTime > timeout * msTimeoutMultiplyer)*/)
+//            else if(!stopped /*&& (mOSBean.getProcessCpuTime() - startTime > timeout * msTimeoutMultiplyer)*/)
+            else if(!stopped && (mOSBean.getProcessCpuTime() - startTime > timeout * msTimeoutMultiplyer))
             {
                 //Try to interrupt the bugger
                 this.terminate();
