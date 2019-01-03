@@ -505,12 +505,14 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
             as = result.getAttributeSelection();
             if(as == null){
                 as = new AttributeSelection();
+                log.info("No attribute selection found");
             }
             as.SelectAttributes(is);
 
             long startTime = System.currentTimeMillis();
             if(as != null)
                 is = as.reduceDimensionality(is);
+
             classifier.buildClassifier(is);
 
             long stopTime = System.currentTimeMillis();
@@ -523,7 +525,7 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
             eval.evaluateModel(classifier, is);
 
             for(CrossValidateResult history : runResultHistory.getResultList()){
-                log.info(" {}, {} ", history.getEvaluation().kappa());
+                log.info(" {}, {} ", history.getEvaluation().pctIncorrect());
             }
 
         }else{
