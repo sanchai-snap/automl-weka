@@ -762,6 +762,7 @@ public class AbstractAlgorithmFramework {
 		final int numberOfThread = (options.validationCores != null)?options.validationCores:Runtime.getRuntime().availableProcessors();
 		
 		ExecutorService taskExecutor = Executors.newFixedThreadPool(numberOfThread);
+
 		for(int i =0; i<numberOfThread; i++) {
 			taskExecutor.execute(new Runnable() {
 	
@@ -780,6 +781,7 @@ public class AbstractAlgorithmFramework {
 							challengeIncumbent(challenger);
 							
 							timeUsed = (long)runHistory.getTotalRunCost() - initialTime;
+
 						}
 					}catch(OutOfTimeException e) {
 						log.debug("OutOfTime happen and need to stop");
@@ -792,8 +794,17 @@ public class AbstractAlgorithmFramework {
 		try {
 		  taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
 		} catch (InterruptedException e) {
-		  e.printStackTrace();
+		  	e.printStackTrace();
+		}catch(Throwable t){
+			t.printStackTrace();
 		}
+		try {
+			// force all threads to stop prevent some of them still running
+			taskExecutor.shutdownNow();
+		}catch(Throwable t){
+			t.printStackTrace();
+		}
+
 		
 //		ScheduledExecutorService executor = Executors.newScheduledThreadPool(4);
 ////		final Future handler = executor.submit(new Cax)

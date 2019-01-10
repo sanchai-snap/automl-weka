@@ -25,6 +25,7 @@ import weka.classifiers.AbstractClassifier;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 
+import weka.classifiers.evaluation.Prediction;
 import weka.core.AdditionalMeasureProducer;
 import weka.core.Capabilities;
 import weka.core.Capabilities.Capability;
@@ -42,6 +43,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.net.URLDecoder;
 
+import java.security.Permission;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -176,6 +178,8 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
     /** The chosen attribute selection method. */
     protected AttributeSelection as;
 
+    protected boolean hasAttributeSelection;
+
     /** The class of the chosen classifier. */
     protected String classifierClass;
     /** The arguments of the chosen classifier. */
@@ -248,6 +252,18 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
      * @param argv should contain command line options (see setOptions)
      */
     public static void main(String[] argv) {
+        System.setSecurityManager(new SecurityManager() {
+                                      @Override
+                                      public void checkExit(int status) {
+                                          new Exception("exit attempt with return code " + status).printStackTrace();
+                                      }
+                                    @Override
+                                    public void checkPermission(Permission perm, Object context) { }
+
+                                    @Override
+                                    public void checkPermission(Permission perm) { }
+                                  });
+
         // this always succeeds...
         runClassifier(new AutoWEKAClassifier(), argv);
     }
@@ -503,6 +519,7 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
             log.info(" {}, {} ", eval.incorrect(), eval.pctIncorrect());
             classifier = result.getClassifier();
             as = result.getAttributeSelection();
+            hasAttributeSelection = as != null;
             if(as == null){
                 as = new AttributeSelection();
                 log.info("No attribute selection found");
@@ -524,9 +541,39 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
             eval = new Evaluation(is);
             eval.evaluateModel(classifier, is);
 
-            for(CrossValidateResult history : runResultHistory.getResultList()){
-                log.info(" {}, {} ", history.getEvaluation().pctIncorrect());
+
+            Instances newInstances = new Instances(is);
+//            for(Instance instance : newInstances){
+//                instance.setClassValue(0.0);
+//            }
+
+            Evaluation evalOther = new Evaluation(newInstances);
+            for (Instance instance : newInstances) {
+                evalOther.evaluateModelOnceAndRecordPrediction(classifier, instance);
             }
+
+//            for(Prediction prediction : evalOther.predictions()){
+//
+//                System.out.println("Actual Value : " + prediction.actual()+ ", Prediction value :"+prediction.predicted()+", Prediction Weight"+prediction.weight());
+//            }
+//
+//            System.out.println("prediction result : "+evalOther.correct());
+//            System.out.println("prediction result : "+evalOther.rootMeanSquaredError());
+
+
+//            for(CrossValidateResult history : runResultHistory.getResultList()){
+//                Evaluation evalOther = new Evaluation(is);
+//
+//                for (Instance instance : is) {
+//                    evalOther.evaluateModelOnceAndRecordPrediction(classifier, instance);
+//                }
+////                eval.evaluateModelOnceAndRecordPrediction(classifier, is);
+////                log.info(" {}, {} ", history.getEvaluation().pctIncorrect());
+////                log.info("{}", Arrays.toString(history.getClassifierArgs()));
+////                try {
+////                    history.getClassifier().distributionForInstance(is.get(0));
+////                }catch(Exception e){ log.error(classifier.getClass().toString(), e ); }
+//            }
 
         }else{
             // default empty set
@@ -1141,6 +1188,10 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
     public Evaluation getEvaluation() {
     	return eval;
     }
+
+    public AttributeSelection getAttributeSelection() { return as; }
+
+    public boolean hasAttributeSelection() { return hasAttributeSelection; }
 
     public RunResultHistory getRunResultHistory(){
         return runResultHistory;

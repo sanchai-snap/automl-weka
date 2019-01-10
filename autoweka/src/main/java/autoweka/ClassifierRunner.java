@@ -11,7 +11,6 @@ import java.io.File;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import weka.attributeSelection.ASEvaluation;
@@ -125,6 +124,8 @@ public class ClassifierRunner
         {
             ClassifierResult res = new ClassifierResult(resultMetric);
             res.setTrainingTime(time);
+        }else {
+            runner.stop();
         }
 
         return runner.result;
@@ -367,6 +368,29 @@ public class ClassifierRunner
             res.setPercentEvaluated(100.0f*(float)(1.0f - eval.unclassified() / trainingSet.numInstances()));
             res.setScoreFromEval(eval, trainingSet);
             saveConfiguration(res,args,instanceStr);
+
+//            {
+                // train model and test
+//                classifier.buildClassifier(trainingSet);
+//                Evaluation mEval = new Evaluation(trainingSet);
+//                for (Instance instance : trainingSet) {
+//                    mEval.evaluateModelOnceAndRecordPrediction(classifier, instance);
+//                }
+//
+//                String result;
+//                if(eval.correct() > mEval.correct()){
+//                    result = "worse";
+//                }else if(eval.correct() < mEval.correct()){
+//                    result = "better";
+//                }else {
+//                    result = "same";
+//                }
+
+//                String logData = "Evaluation comparison "+modelString+ ": cross "+eval.correct()+" , predict "+mEval.correct() +",  " + result;
+//                log.info("Evaluation comparison : cross {} , predict {},  {}", eval.correct(), mEval.correct(), result);
+//                System.out.println(logData);
+//            }
+
         } catch (Exception e) {
             log.error("Cannot build model ", e);
             e.printStackTrace();
