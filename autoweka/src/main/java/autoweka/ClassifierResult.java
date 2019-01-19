@@ -5,6 +5,8 @@ import weka.classifiers.AbstractClassifier;
 import weka.classifiers.Evaluation;
 import weka.core.Instances;
 
+import java.util.Date;
+
 /**
  * Wraps all the data that comes from training a classifier so it can be passed back to a SMBO method
  */
@@ -18,6 +20,54 @@ public class ClassifierResult
         } else {
             return INFINITY;
         }
+    }
+
+    public String getAttributeSearchClassName() {
+        return attributeSearchClassName;
+    }
+
+    public void setAttributeSearchClassName(String attributeSearchClassName) {
+        this.attributeSearchClassName = attributeSearchClassName;
+    }
+
+    public String[] getAttributeSearchArgs() {
+        return attributeSearchArgs;
+    }
+
+    public void setAttributeSearchArgs(String[] attributeSearchArgs) {
+        this.attributeSearchArgs = attributeSearchArgs;
+    }
+
+    public String getAttributeEvalClassName() {
+        return attributeEvalClassName;
+    }
+
+    public void setAttributeEvalClassName(String attributeEvalClassName) {
+        this.attributeEvalClassName = attributeEvalClassName;
+    }
+
+    public String[] getAttributeEvalArgs() {
+        return attributeEvalArgs;
+    }
+
+    public void setAttributeEvalArgs(String[] attributeEvalArgs) {
+        this.attributeEvalArgs = attributeEvalArgs;
+    }
+
+    public Date getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(Date startTime) {
+        this.startTime = startTime;
+    }
+
+    public Date getFinishTime() {
+        return finishTime;
+    }
+
+    public void setFinishTime(Date finishTime) {
+        this.finishTime = finishTime;
     }
 
     /**
@@ -315,6 +365,12 @@ public class ClassifierResult
     private Evaluation evaluation;
     private String[] classifierArgs;
     private String modelString;
+    private String attributeSearchClassName;
+    private String[] attributeSearchArgs;
+    private String attributeEvalClassName;
+    private String[] attributeEvalArgs;
+    private Date startTime;
+    private Date finishTime;
 
     public ClassifierResult(String str)
     {
@@ -480,4 +536,6 @@ public class ClassifierResult
     public void setModelString(String modelString) {
         this.modelString = modelString;
     }
+
+
 }

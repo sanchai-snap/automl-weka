@@ -25,7 +25,6 @@ import weka.classifiers.AbstractClassifier;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 
-import weka.classifiers.evaluation.Prediction;
 import weka.core.AdditionalMeasureProducer;
 import weka.core.Capabilities;
 import weka.core.Capabilities.Capability;
@@ -46,6 +45,7 @@ import java.net.URLDecoder;
 import java.security.Permission;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -87,6 +87,61 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
     static final int DEFAULT_MEM_LIMIT = 1024;
     /** Default */
     static final int DEFAULT_N_BEST = 1;
+
+    /** The class of the chosen attribute search method. */
+    public String getAttributeSearchClass() {
+        return attributeSearchClass;
+    }
+
+    public void setAttributeSearchClass(String attributeSearchClass) {
+        this.attributeSearchClass = attributeSearchClass;
+    }
+
+    /** The arguments of the chosen attribute search method. */
+    public String[] getAttributeSearchArgs() {
+        return attributeSearchArgs;
+    }
+
+    public void setAttributeSearchArgs(String[] attributeSearchArgs) {
+        this.attributeSearchArgs = attributeSearchArgs;
+    }
+
+    /** The class of the chosen attribute evaluation. */
+    public String getAttributeEvalClass() {
+        return attributeEvalClass;
+    }
+
+    public void setAttributeEvalClass(String attributeEvalClass) {
+        this.attributeEvalClass = attributeEvalClass;
+    }
+
+    /** The arguments of the chosen attribute evaluation method. */
+    public String[] getAttributeEvalArgs() {
+        return attributeEvalArgs;
+    }
+
+    public void setAttributeEvalArgs(String[] attributeEvalArgs) {
+        this.attributeEvalArgs = attributeEvalArgs;
+    }
+
+    /** Start time of evaluation process. */
+    public Date getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(Date startTime) {
+        this.startTime = startTime;
+    }
+
+    /** Finish time of evaluation process. */
+    public Date getFinishTime() {
+        return finishTime;
+    }
+
+    public void setFinishTime(Date finishTime) {
+        this.finishTime = finishTime;
+    }
+
     /** Internal evaluation method. */
     static enum Resampling {
         CrossValidation,
@@ -184,14 +239,13 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
     protected String classifierClass;
     /** The arguments of the chosen classifier. */
     protected String[] classifierArgs;
-    /** The class of the chosen attribute search method. */
-    protected String attributeSearchClass;
-    /** The arguments of the chosen attribute search method. */
-    protected String[] attributeSearchArgs;
-    /** The class of the chosen attribute evaluation. */
-    protected String attributeEvalClass;
-    /** The arguments of the chosen attribute evaluation method. */
-    protected String[] attributeEvalArgs;
+    private String attributeSearchClass;
+    private String[] attributeSearchArgs;
+    private String attributeEvalClass;
+    private String[] attributeEvalArgs;
+
+    private Date startTime;
+    private Date finishTime;
 
     /** The paths to the internal Auto-WEKA files.*/
     protected String[] msExperimentPaths;
@@ -281,10 +335,10 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
         classifier = null;
         classifierClass = null;
         classifierArgs = null;
-        attributeSearchClass = null;
-        attributeSearchArgs = new String[0];
-        attributeEvalClass = null;
-        attributeEvalArgs = new String[0];
+        setAttributeSearchClass(null);
+        setAttributeSearchArgs(new String[0]);
+        setAttributeEvalClass(null);
+        setAttributeEvalArgs(new String[0]);
         wLog = null;
 
         totalTried = 0;
@@ -519,6 +573,16 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
             log.info(" {}, {} ", eval.incorrect(), eval.pctIncorrect());
             classifier = result.getClassifier();
             as = result.getAttributeSelection();
+            this.eval = eval;
+
+            setAttributeEvalClass(result.getAttributeEval());
+            setAttributeEvalArgs(result.getAttributeEvalArgs());
+            setAttributeSearchClass(result.getAttributeSearch());
+            setAttributeSearchArgs(result.getAttributeSearchArgs());
+
+            setStartTime(result.getStartTime());
+            setFinishTime(result.getFinishTime());
+
             hasAttributeSelection = as != null;
             if(as == null){
                 as = new AttributeSelection();
@@ -1040,21 +1104,21 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
     public String toString() {
         String res = "best classifier: " + classifierClass + "\n" +
             "arguments: " + (classifierArgs != null ? Arrays.toString(classifierArgs) : "[]") + "\n" +
-            "attribute search: " + attributeSearchClass + "\n" +
-            "attribute search arguments: " + (attributeSearchArgs != null ? Arrays.toString(attributeSearchArgs) : "[]") + "\n" +
-            "attribute evaluation: " + attributeEvalClass + "\n" +
-            "attribute evaluation arguments: " + (attributeEvalArgs != null ? Arrays.toString(attributeEvalArgs) : "[]") + "\n" +
+            "attribute search: " + getAttributeSearchClass() + "\n" +
+            "attribute search arguments: " + (getAttributeSearchArgs() != null ? Arrays.toString(getAttributeSearchArgs()) : "[]") + "\n" +
+            "attribute evaluation: " + getAttributeEvalClass() + "\n" +
+            "attribute evaluation arguments: " + (getAttributeEvalArgs() != null ? Arrays.toString(getAttributeEvalArgs()) : "[]") + "\n" +
             "metric: " + metric + "\n" +
             "estimated " + metric + ": " + estimatedMetricValue + "\n" +
             "training time on evaluation dataset: " + finalTrainTime + " seconds\n\n";
 
         res += "You can use the chosen classifier in your own code as follows:\n\n";
-        if(attributeSearchClass != null || attributeEvalClass != null) {
+        if(getAttributeSearchClass() != null || getAttributeEvalClass() != null) {
             res += "AttributeSelection as = new AttributeSelection();\n";
-            if(attributeSearchClass != null) {
-                res += "ASSearch asSearch = ASSearch.forName(\"" + attributeSearchClass + "\", new String[]{";
-                if(attributeSearchArgs != null) {
-                    String[] args = attributeSearchArgs.clone();
+            if(getAttributeSearchClass() != null) {
+                res += "ASSearch asSearch = ASSearch.forName(\"" + getAttributeSearchClass() + "\", new String[]{";
+                if(getAttributeSearchArgs() != null) {
+                    String[] args = getAttributeSearchArgs().clone();
                     for(int i = 0; i < args.length; i++) {
                         res += "\"" + args[i] + "\"";
                         if(i < args.length - 1) res += ", ";
@@ -1064,10 +1128,10 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
                 res += "as.setSearch(asSearch);\n";
             }
 
-            if(attributeEvalClass != null) {
-                res += "ASEvaluation asEval = ASEvaluation.forName(\"" + attributeEvalClass + "\", new String[]{";
-                if(attributeEvalArgs != null) {
-                    String[] args = attributeEvalArgs.clone();
+            if(getAttributeEvalClass() != null) {
+                res += "ASEvaluation asEval = ASEvaluation.forName(\"" + getAttributeEvalClass() + "\", new String[]{";
+                if(getAttributeEvalArgs() != null) {
+                    String[] args = getAttributeEvalArgs().clone();
                     for(int i = 0; i < args.length; i++) {
                         res += "\"" + args[i] + "\"";
                         if(i < args.length - 1) res += ", ";
@@ -1196,4 +1260,5 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
     public RunResultHistory getRunResultHistory(){
         return runResultHistory;
     }
+
 }

@@ -3,7 +3,6 @@ package autoweka;
 import weka.classifiers.Evaluation;
 import weka.classifiers.AbstractClassifier;
 import weka.classifiers.evaluation.output.prediction.CSV;
-import weka.core.Attribute;
 import weka.core.Instances;
 import weka.core.Instance;
 
@@ -11,6 +10,7 @@ import java.io.File;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import weka.attributeSelection.ASEvaluation;
@@ -182,6 +182,7 @@ public class ClassifierRunner
         String modelString = propertyMap.get("targetclass") +" seed = "+properties.getProperty("seed")+", fold = "+properties.getProperty("fold") +" "+ Arrays.toString(args.toArray());
 
         res.setModelString(modelString);
+        res.setStartTime(new Date());
 
         //See if we should do some attribute searching
         String attribSearchClassName = propertyMap.get("attributesearch");
@@ -196,18 +197,24 @@ public class ClassifierRunner
             if(attribTime == null)
                 throw new RuntimeException("Missing the attribute evaluation time param");
 
-            float attribTimeout = Float.parseFloat(attribTime);
+//            float attribTimeout = Float.parseFloat(attribTime);
 
             ASEvaluation asEval = null;
-            ASSearch     asSearch = null;
+            ASSearch asSearch = null;
 
             try{
-                asEval   = ASEvaluation.forName(attribEvalClassName, argMap.get("attributeeval").toArray(new String[0]));
+                String[] attributeEvalArgs = argMap.get("attributeeval").toArray(new String[0]);
+                asEval   = ASEvaluation.forName(attribEvalClassName, attributeEvalArgs);
+                res.setAttributeEvalClassName(attribEvalClassName);
+                res.setAttributeEvalArgs(attributeEvalArgs);
             }catch(Exception e){
                 throw new RuntimeException("Failed to create ASEvaluation " + attribEvalClassName + ": " + e.getMessage(), e);
             }
             try{
-                asSearch = ASSearch.forName(attribSearchClassName, argMap.get("attributesearch").toArray(new String[0]));
+                String[] attributeSearchArgs = argMap.get("attributesearch").toArray(new String[0]);
+                asSearch = ASSearch.forName(attribSearchClassName, attributeSearchArgs);
+                res.setAttributeSearchClassName(attribSearchClassName);
+                res.setAttributeSearchArgs(attributeSearchArgs);
             }catch(Exception e){
                 throw new RuntimeException("Failed to create ASSearch " + attribSearchClassName + ": " + e.getMessage(), e);
             }
@@ -405,7 +412,7 @@ public class ClassifierRunner
         attribSearchClassName, argMap.get("attributesearch"),
         instanceStr, res.getRawScore());
 
-//        log.debug("Num Training: {}, num testing: {}", training.numInstances(), testing.numInstances());
+        res.setFinishTime(new Date());
         return res;
     }
 

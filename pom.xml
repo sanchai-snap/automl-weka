@@ -7,7 +7,7 @@
   <groupId>com.snaplogic.datascience</groupId>
   <artifactId>automl-weka</artifactId>
   <packaging>pom</packaging>
-  <version>1.0.1</version>
+  <version>1.0.2</version>
 
 <modules>
     <module>aeatk</module>

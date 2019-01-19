@@ -100,12 +100,20 @@ public class SMACWrapper extends Wrapper
         CrossValidateResult crossValidateResult = new CrossValidateResult();
         crossValidateResult.setMatricValue(res.getRawScore());
         crossValidateResult.setComplete(res.getCompleted());
-//        crossValidateResult.setCrossValidationString( res.getClassifier().toString());
         crossValidateResult.setResultString(resultString);
         crossValidateResult.setEvaluation(res.getEvaluation());
         crossValidateResult.setClassifier(res.getClassifier());
         crossValidateResult.setClassifierArgs(res.getClassiferArgsArray());
         crossValidateResult.setAttributeSelection(res.getAttributeSelection());
+
+        crossValidateResult.setAttributeEval(res.getAttributeEvalClassName());
+        crossValidateResult.setAttributeEvalArgs(res.getAttributeEvalArgs());
+        crossValidateResult.setAttributeSearch(res.getAttributeSearchClassName());
+        crossValidateResult.setAttributeSearchArgs(res.getAttributeSearchArgs());
+
+        crossValidateResult.setStartTime(res.getStartTime());
+        crossValidateResult.setFinishTime(res.getFinishTime());
+
         crossValidateResult.setCrossValidationString(res.getModelString());
 
         return crossValidateResult;

@@ -4,6 +4,8 @@ import weka.attributeSelection.AttributeSelection;
 import weka.classifiers.AbstractClassifier;
 import weka.classifiers.Evaluation;
 
+import java.util.Date;
+
 public class CrossValidateResult implements Comparable<CrossValidateResult>{
     private double matricValue;
     private String crossValidationString;
@@ -13,6 +15,15 @@ public class CrossValidateResult implements Comparable<CrossValidateResult>{
     private String[] classifierArgs;
     private Evaluation evaluation;
     private AttributeSelection attributeSelection;
+
+    private String attributeSearch;
+    private String[] attributeSearchArgs;
+    private String attributeEval;
+    private String[] attributeEvalArgs;
+
+    private Date startTime;
+    private Date finishTime;
+
 
     public double getMatricValue() {
         return matricValue;
@@ -83,5 +94,53 @@ public class CrossValidateResult implements Comparable<CrossValidateResult>{
 
     public void setClassifierArgs(String[] classifierArgs) {
         this.classifierArgs = classifierArgs;
+    }
+
+    public String getAttributeSearch() {
+        return attributeSearch;
+    }
+
+    public void setAttributeSearch(String attributeSearch) {
+        this.attributeSearch = attributeSearch;
+    }
+
+    public String[] getAttributeSearchArgs() {
+        return attributeSearchArgs;
+    }
+
+    public void setAttributeSearchArgs(String[] attributeSearchArgs) {
+        this.attributeSearchArgs = attributeSearchArgs;
+    }
+
+    public String getAttributeEval() {
+        return attributeEval;
+    }
+
+    public void setAttributeEval(String attributeEval) {
+        this.attributeEval = attributeEval;
+    }
+
+    public String[] getAttributeEvalArgs() {
+        return attributeEvalArgs;
+    }
+
+    public void setAttributeEvalArgs(String[] attributeEvalArgs) {
+        this.attributeEvalArgs = attributeEvalArgs;
+    }
+
+    public Date getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(Date startTime) {
+        this.startTime = startTime;
+    }
+
+    public Date getFinishTime() {
+        return finishTime;
+    }
+
+    public void setFinishTime(Date finishTime) {
+        this.finishTime = finishTime;
     }
 }
