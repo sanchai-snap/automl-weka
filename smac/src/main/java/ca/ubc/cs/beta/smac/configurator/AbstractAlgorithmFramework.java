@@ -246,22 +246,22 @@ public class AbstractAlgorithmFramework {
 			log.warn("Saving runs every iteration is discouraged for small cap times and may cause a significant amount of overhead due to file I/O.");
 		}
 		
-		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
-		{
-
-			@Override
-			public void run() {
-				try {
-					if (shouldWriteStateOnCrash.get()) {
-						log.info("Making best attempt to save state. This state may be dirty, in that it was taken in the middle of an iteration and consequently may not be restorable. It may also be corrupt depending on the exact reason we are shutting down.");
-						saveState("SHUTDOWN", true);
-					} else {
-						log.trace("State Saved Already, Skipping Shutdown Version");
-					}
-				}catch(Exception e) {}
-			}
-			
-		}));
+//		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
+//		{
+//
+//			@Override
+//			public void run() {
+//				try {
+//					if (shouldWriteStateOnCrash.get()) {
+//						log.info("Making best attempt to save state. This state may be dirty, in that it was taken in the middle of an iteration and consequently may not be restorable. It may also be corrupt depending on the exact reason we are shutting down.");
+//						saveState("SHUTDOWN", true);
+//					} else {
+//						log.trace("State Saved Already, Skipping Shutdown Version");
+//					}
+//				}catch(Exception e) {}
+//			}
+//
+//		}));
 	}
 
 	
@@ -596,7 +596,7 @@ public class AbstractAlgorithmFramework {
 				}
 				
 				
-				saveState("it", true);
+//				saveState("it", true);
 				shouldWriteStateOnCrash.set(false);
 				
 				log.trace("SMAC Completed");
@@ -610,7 +610,7 @@ public class AbstractAlgorithmFramework {
 			} catch(RuntimeException e)
 			{
 				try{
-					saveState("CRASH",true);
+//					saveState("CRASH",true);
 					shouldWriteStateOnCrash.set(false);
 				} catch(RuntimeException e2)
 				{

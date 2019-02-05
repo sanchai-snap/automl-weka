@@ -147,48 +147,48 @@ public class FileSharingRunHistoryDecorator implements ThreadSafeRunHistory {
 		}
 		
 		
-		if(log.isInfoEnabled())
-		{
-			Thread t = new Thread(new Runnable(){
-
-				@Override
-				public void run() {
-					
-					
-					
-					Thread.currentThread().setName("FileSharingRunHistory Logger ( outputID:" + outputID + ")");
-					List<String> addedRunsStr = new ArrayList<String>();
-					int total = 0;
-					
-					
-					
-					for(Entry<File, Integer> ent : importedRuns.entrySet())
-					{
-						addedRunsStr.add(ent.getKey().getName() + "=>" + ent.getValue());
-						int values = ent.getValue();
-						if(values > 0)
-						{
-							total += values;
-						}
-					}
-					
-					if(readData)
-					{
-						log.info("At shutdown: {} had {} runs added to it", f, locallyAddedRuns.get());
-						log.info("At shutdown: we retrieved atleast {} runs and added them to our current data set {} which now has {} runs ({} local)",  total, addedRunsStr , FileSharingRunHistoryDecorator.this.getAlgorithmRunDataIncludingRedundant().size() , locallyAddedRuns.get() );
-					} else
-					{
-						log.debug("At shutdown: {} had {} runs added to it", f, locallyAddedRuns.get());
-					}
-					
-					
-				
-				}
-				
-			});
-			
-			Runtime.getRuntime().addShutdownHook(t);
-		}
+//		if(log.isInfoEnabled())
+//		{
+//			Thread t = new Thread(new Runnable(){
+//
+//				@Override
+//				public void run() {
+//
+//
+//
+//					Thread.currentThread().setName("FileSharingRunHistory Logger ( outputID:" + outputID + ")");
+//					List<String> addedRunsStr = new ArrayList<String>();
+//					int total = 0;
+//
+//
+//
+//					for(Entry<File, Integer> ent : importedRuns.entrySet())
+//					{
+//						addedRunsStr.add(ent.getKey().getName() + "=>" + ent.getValue());
+//						int values = ent.getValue();
+//						if(values > 0)
+//						{
+//							total += values;
+//						}
+//					}
+//
+//					if(readData)
+//					{
+//						log.info("At shutdown: {} had {} runs added to it", f, locallyAddedRuns.get());
+//						log.info("At shutdown: we retrieved atleast {} runs and added them to our current data set {} which now has {} runs ({} local)",  total, addedRunsStr , FileSharingRunHistoryDecorator.this.getAlgorithmRunDataIncludingRedundant().size() , locallyAddedRuns.get() );
+//					} else
+//					{
+//						log.debug("At shutdown: {} had {} runs added to it", f, locallyAddedRuns.get());
+//					}
+//
+//
+//
+//				}
+//
+//			});
+//
+//			Runtime.getRuntime().addShutdownHook(t);
+//		}
 		
 		
 		

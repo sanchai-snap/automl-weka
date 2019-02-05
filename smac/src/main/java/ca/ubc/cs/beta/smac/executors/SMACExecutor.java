@@ -111,10 +111,11 @@ public class SMACExecutor {
 		 * AS THE CLI OPTIONS USE A TRICK TO ALLOW LOGGING TO BE CONFIGURABLE ON THE CLI
 		 * IF YOU LOG PRIOR TO IT ACTIVATING, IT WILL BE IGNORED 
 		 */
+		SMACBuilder smacBuilder = null;
 		try {
 			SMACOptions options = parseCLIOptions(args);
 			
-			SMACBuilder smacBuilder = new SMACBuilder();
+			smacBuilder = new SMACBuilder();
 			
 			//EventManager eventManager = smacBuilder.getEventManager();
 			AlgorithmExecutionConfiguration execConfig = options.getAlgorithmExecutionConfig();
@@ -275,7 +276,7 @@ public class SMACExecutor {
 			
 			
 			
-			smacBuilder.getEventManager().shutdown();
+//			smacBuilder.getEventManager().shutdown();
 			
 		if(options.doValidation)
 		{
@@ -399,6 +400,14 @@ public class SMACExecutor {
 				}
 				
 				return AEATKReturnValues.OTHER_EXCEPTION;
+		} finally{
+			if(smacBuilder != null){
+				try {
+					smacBuilder.getEventManager().shutdown();
+				}catch(Exception e){
+					e.printStackTrace();
+				}
+			}
 		}
 		
 		
@@ -597,6 +606,8 @@ public class SMACExecutor {
 		
 			
 			throw e;
+		}finally{
+
 		}
 	}
 	

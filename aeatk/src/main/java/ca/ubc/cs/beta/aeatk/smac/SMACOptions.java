@@ -225,7 +225,7 @@ public class SMACOptions extends AbstractOptions {
 	@Parameter(names="--intermediary-saves", description="determines whether to make any intermediary-saves or not (if false, no quick saves will be made either). The state will still be saved at the end of the run however")
 
 	public boolean shutdownTAEWhenDone = true;
-	public boolean intermediarySaves = true; 
+	public boolean intermediarySaves = false;
 
 	@UsageTextField(defaultValues="The value of --cores", level=OptionLevel.INTERMEDIATE)
 	@Parameter(names="--validation-cores", description="Number of cores to use when validating (only applicable when using local command line cores). Essentially this changes the value of --cli-cores and --cores after SMAC has run. The use of this parameter is undefined if the TargetAlgorithmEvaluator being used is not the CLI", validateWith=FixedPositiveInteger.class)

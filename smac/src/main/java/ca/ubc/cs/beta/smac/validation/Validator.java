@@ -1082,8 +1082,6 @@ endloop:
         }
 
 		
-		
-		
 		StateSerializer ss = sf.getStateSerializer("it", 1);
 		
 		

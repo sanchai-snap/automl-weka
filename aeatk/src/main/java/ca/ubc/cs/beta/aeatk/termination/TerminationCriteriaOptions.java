@@ -61,10 +61,10 @@ public class TerminationCriteriaOptions extends AbstractOptions {
 		termConds.add(new AlgorithmRunLimitCondition(totalNumRunsLimit));
 		termConds.add(new ModelIterationTerminationCondition(this.numIterations));
 		termConds.add(new NoRunsForManyChallengesEvent(challengeIncumbentAttempts));
-		if(fileToWatch != null)
-		{
-			termConds.add(new FileDeletedTerminateCondition(new File(fileToWatch)));
-		}
+//		if(fileToWatch != null)
+//		{
+//			termConds.add(new FileDeletedTerminateCondition(new File(fileToWatch)));
+//		}
 		return new CompositeTerminationCondition(termConds);
 	}
 	

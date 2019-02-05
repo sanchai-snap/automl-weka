@@ -147,14 +147,14 @@ public class TargetAlgorithmEvaluatorBuilder {
 		    tae = new ExitOnFailureTargetAlgorithmEvaluatorDecorator(tae);
 		}
 		
-		if(options.uncleanShutdownCheck)
-		{
-			log.trace("[TAE] Checking for unclean shutdown");
-			tae = new UncleanShutdownDetectingTargetAlgorithmEvaluator(tae);
-		} else
-		{
-			log.debug("[TAE] Not Checking for unclean shutdown");
-		}
+//		if(options.uncleanShutdownCheck)
+//		{
+//			log.trace("[TAE] Checking for unclean shutdown");
+//			tae = new UncleanShutdownDetectingTargetAlgorithmEvaluator(tae);
+//		} else
+//		{
+//			log.debug("[TAE] Not Checking for unclean shutdown");
+//		}
 		
 		if(options.tForkOptions.forkToTAE != null)
 		{
@@ -218,14 +218,14 @@ public class TargetAlgorithmEvaluatorBuilder {
 		}
 		
 		
-		if(options.taeStopProcessingOnShutdown)
-		{
-			log.trace("[TAE] Processing of runs and results will stop on JVM Shutdown");
-			tae = new JVMShutdownBlockerTargetAlgorithmEvaluatorDecorator(tae);
-		} else
-		{
-			log.debug("[TAE] Processing of runs and results will continue on JVM Shutdown");
-		}
+//		if(options.taeStopProcessingOnShutdown)
+//		{
+//			log.trace("[TAE] Processing of runs and results will stop on JVM Shutdown");
+//			tae = new JVMShutdownBlockerTargetAlgorithmEvaluatorDecorator(tae);
+//		} else
+//		{
+//			log.debug("[TAE] Processing of runs and results will continue on JVM Shutdown");
+//		}
 	
 		if(!ignoreBound && options.boundRuns)
 		{
@@ -393,11 +393,11 @@ public class TargetAlgorithmEvaluatorBuilder {
 			tae = new KillCaptimeExceedingRunsRunsTargetAlgorithmEvaluatorDecorator(tae, options.killCaptimeExceedingRunFactor);
 		}
 		
-		if(options.fileToWatch != null)
-		{
-			log.trace("[TAE] Killing runs if {} is deleted", options.fileToWatch);
-			tae = new TerminateAllRunsOnFileDeleteTargetAlgorithmEvaluatorDecorator(tae, new File(options.fileToWatch));
-		}
+//		if(options.fileToWatch != null)
+//		{
+//			log.trace("[TAE] Killing runs if {} is deleted", options.fileToWatch);
+//			tae = new TerminateAllRunsOnFileDeleteTargetAlgorithmEvaluatorDecorator(tae, new File(options.fileToWatch));
+//		}
 		
 		if(options.warnIfNoResponseFromTAE > 0)
 		{
