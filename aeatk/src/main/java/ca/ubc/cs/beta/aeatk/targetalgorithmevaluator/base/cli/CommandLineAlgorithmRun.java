@@ -839,9 +839,9 @@ public class CommandLineAlgorithmRun implements Callable<AlgorithmRunResult>{
 	{
 		String[] execCmdArray = getTargetAlgorithmExecutionCommand(runConfig);
 
-		String[] paramsArray = Arrays.copyOfRange(execCmdArray, 6, execCmdArray.length);
+		String[] paramsArray = Arrays.copyOfRange(execCmdArray, 4, execCmdArray.length);
 
-		String runnerClassString = execCmdArray[5];
+		String runnerClassString = execCmdArray[3];
 
 		try {
 			Class runnerClass = Class.forName(runnerClassString);

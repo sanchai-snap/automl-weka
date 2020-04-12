@@ -192,8 +192,8 @@ public class Util
     static public String getAbsoluteClasspath()
     {
 //        return System.getProperty("java.class.path") + java.io.File.pathSeparatorChar + URLDecoder.decode(Util.class.getProtectionDomain().getCodeSource().getLocation().getPath());
-        
-		String path = System.getProperty("java.class.path");
+
+        String path = System.getProperty("java.class.path");
 		
 		String path2 = URLDecoder.decode(Util.class.getProtectionDomain().getCodeSource().getLocation().getPath());
 		

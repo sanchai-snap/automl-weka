@@ -261,7 +261,10 @@ public class SMACExperimentConstructor extends ExperimentConstructor
         Properties props = autoweka.Util.parsePropertyString(mExperiment.extraPropsString);
         String wrapper = props.getProperty("wrapper", "autoweka.smac.SMACWrapper");
 
-        out.println("algo = \"" + autoweka.Util.getJavaExecutable() + "\" -Dautoweka.infinity=" + autoweka.ClassifierResult.getInfinity() + " -Xmx" + mExperiment.memory + " " + wrapper + " -prop " + getWrapperPropString() + extraProps + " -wrapper");
+        out.println("algo = \"" + autoweka.Util.getJavaExecutable() + "\" -Dautoweka.infinity=" + autoweka.ClassifierResult.getInfinity() + " -Xmx" + mExperiment.memory +
+                " " +
+//                " -cp \"" + autoweka.Util.getAbsoluteClasspath() + "\" " +
+                wrapper + " -prop " + getWrapperPropString() + extraProps + " -wrapper");
         out.println("execdir = ./");
         out.println("deterministic = 1");
         out.println("run_obj = quality");

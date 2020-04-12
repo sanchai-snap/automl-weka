@@ -175,7 +175,7 @@ public class SubProcessWrapper extends Wrapper
             wrapperCmd.add(autoweka.Util.getJavaExecutable());
             wrapperCmd.add("-Xmx" + memory);
 //            wrapperCmd.add("-cp");
-//            wrapperCmd.add(autowek a.Util. getAbsoluteClasspath());
+//            wrapperCmd.add(autoweka.Util. getAbsoluteClasspath());
             wrapperCmd.add("autoweka.SubProcessWrapper");
             wrapperCmd.add("-prop");
             wrapperCmd.add(Util.propertiesToString(props));
