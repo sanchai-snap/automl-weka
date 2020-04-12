@@ -126,6 +126,11 @@ public class SMACExperimentConstructor extends ExperimentConstructor
         args.add("--validation-cores");
         args.add(coreNo+"");
 
+        if (this.mExperiment.runCount != Integer.MAX_VALUE) {
+            args.add("--runcount_limit");
+            args.add(this.mExperiment.runCount + "");
+        }
+
         args.add("--experiment-key");
         args.add(mExperiment.experimentKey);
 
@@ -256,7 +261,7 @@ public class SMACExperimentConstructor extends ExperimentConstructor
         Properties props = autoweka.Util.parsePropertyString(mExperiment.extraPropsString);
         String wrapper = props.getProperty("wrapper", "autoweka.smac.SMACWrapper");
 
-        out.println("algo = \"" + autoweka.Util.getJavaExecutable() + "\" -Dautoweka.infinity=" + autoweka.ClassifierResult.getInfinity() + " -Xmx" + mExperiment.memory + " -cp \"" + autoweka.Util.getAbsoluteClasspath() + "\" " + wrapper + " -prop " + getWrapperPropString() + extraProps + " -wrapper");
+        out.println("algo = \"" + autoweka.Util.getJavaExecutable() + "\" -Dautoweka.infinity=" + autoweka.ClassifierResult.getInfinity() + " -Xmx" + mExperiment.memory + " " + wrapper + " -prop " + getWrapperPropString() + extraProps + " -wrapper");
         out.println("execdir = ./");
         out.println("deterministic = 1");
         out.println("run_obj = quality");

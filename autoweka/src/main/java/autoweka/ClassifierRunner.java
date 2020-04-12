@@ -158,14 +158,11 @@ public class ClassifierRunner
 
         Properties properties = new Properties();
 
-        if("default".equals(instanceStr)){
-            properties.setProperty("seed","0");
-            properties.setProperty("fold","10");
-        }else{
-            try {
-                properties = Util.parsePropertyString(instanceStr);
-            }catch(Exception e) { }
-        }
+        if ("default".equals(instanceStr))
+            throw new RuntimeException("Unsupport default instance!");
+        try {
+            properties = Util.parsePropertyString(instanceStr);
+        } catch (Exception exception) {}
 
 //        Instances combined = new Instances();
 //        Instances allInstances = mInstanceGenerator.get(instanceStr);
@@ -202,20 +199,22 @@ public class ClassifierRunner
             ASEvaluation asEval = null;
             ASSearch asSearch = null;
 
-            try{
-                String[] attributeEvalArgs = argMap.get("attributeeval").toArray(new String[0]);
-                asEval   = ASEvaluation.forName(attribEvalClassName, attributeEvalArgs);
+            try {
+                String[] attributeEvalArgs = (String[])((List)argMap.get("attributeeval")).toArray((Object[])new String[0]);
+                String[] tmpAttributeEvalArgs = (String[])attributeEvalArgs.clone();
+                asEval = ASEvaluation.forName(attribEvalClassName, attributeEvalArgs);
                 res.setAttributeEvalClassName(attribEvalClassName);
-                res.setAttributeEvalArgs(attributeEvalArgs);
-            }catch(Exception e){
+                res.setAttributeEvalArgs(tmpAttributeEvalArgs);
+            } catch (Exception e) {
                 throw new RuntimeException("Failed to create ASEvaluation " + attribEvalClassName + ": " + e.getMessage(), e);
             }
-            try{
-                String[] attributeSearchArgs = argMap.get("attributesearch").toArray(new String[0]);
+            try {
+                String[] attributeSearchArgs = (String[])((List)argMap.get("attributesearch")).toArray((Object[])new String[0]);
+                String[] tmpAttributeSearchArgs = (String[])attributeSearchArgs.clone();
                 asSearch = ASSearch.forName(attribSearchClassName, attributeSearchArgs);
                 res.setAttributeSearchClassName(attribSearchClassName);
-                res.setAttributeSearchArgs(attributeSearchArgs);
-            }catch(Exception e){
+                res.setAttributeSearchArgs(tmpAttributeSearchArgs);
+            } catch (Exception e) {
                 throw new RuntimeException("Failed to create ASSearch " + attribSearchClassName + ": " + e.getMessage(), e);
             }
 
@@ -372,34 +371,14 @@ public class ClassifierRunner
             eval.crossValidateModel(classifier, trainingSet, foldNo, new Random(seed));
 
             res.setCompleted(true);
-            res.setPercentEvaluated(100.0f*(float)(1.0f - eval.unclassified() / trainingSet.numInstances()));
+            res.setPercentEvaluated((100.0F * (float)(1.0D - eval.unclassified() / trainingSet.numInstances())));
             res.setScoreFromEval(eval, trainingSet);
-            saveConfiguration(res,args,instanceStr);
-
-//            {
-                // train model and test
-//                classifier.buildClassifier(trainingSet);
-//                Evaluation mEval = new Evaluation(trainingSet);
-//                for (Instance instance : trainingSet) {
-//                    mEval.evaluateModelOnceAndRecordPrediction(classifier, instance);
-//                }
-//
-//                String result;
-//                if(eval.correct() > mEval.correct()){
-//                    result = "worse";
-//                }else if(eval.correct() < mEval.correct()){
-//                    result = "better";
-//                }else {
-//                    result = "same";
-//                }
-
-//                String logData = "Evaluation comparison "+modelString+ ": cross "+eval.correct()+" , predict "+mEval.correct() +",  " + result;
-//                log.info("Evaluation comparison : cross {} , predict {},  {}", eval.correct(), mEval.correct(), result);
-//                System.out.println(logData);
-//            }
+            res.setSeed(seed);
+            res.setFoldNo(foldNo);
+            saveConfiguration(res, args, instanceStr);
 
         } catch (Exception e) {
-            log.error("Cannot build model ", e);
+            this.log.error("Cannot build model ", e);
             e.printStackTrace();
             res.setCompleted(false);
         }

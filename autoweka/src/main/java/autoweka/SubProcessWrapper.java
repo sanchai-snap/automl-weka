@@ -174,8 +174,8 @@ public class SubProcessWrapper extends Wrapper
             List<String> wrapperCmd = new ArrayList<String>();
             wrapperCmd.add(autoweka.Util.getJavaExecutable());
             wrapperCmd.add("-Xmx" + memory);
-            wrapperCmd.add("-cp");
-            wrapperCmd.add(autoweka.Util.getAbsoluteClasspath());
+//            wrapperCmd.add("-cp");
+//            wrapperCmd.add(autowek a.Util. getAbsoluteClasspath());
             wrapperCmd.add("autoweka.SubProcessWrapper");
             wrapperCmd.add("-prop");
             wrapperCmd.add(Util.propertiesToString(props));

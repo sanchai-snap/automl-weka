@@ -1,22 +1,19 @@
 package autoweka;
 
-import javax.xml.bind.annotation.*;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
+import ca.ubc.cs.beta.smac.executors.SMACExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ca.ubc.cs.beta.smac.executors.SMACExecutor;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.List;
 
 @XmlRootElement(name="experiment")
 @XmlAccessorType(XmlAccessType.NONE)
@@ -122,6 +119,9 @@ public class Experiment extends XmlSerializable
 
     @XmlElement(name="experimentKey")
     public String experimentKey;
+
+    @XmlElement(name = "runCountLimit")
+    public int runCount;
 
     /**
      * Class capturing any of the extra dataset partitions that should be run on all the trajectory points for analysis

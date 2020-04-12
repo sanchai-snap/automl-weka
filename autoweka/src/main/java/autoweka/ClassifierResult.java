@@ -70,6 +70,22 @@ public class ClassifierResult
         this.finishTime = finishTime;
     }
 
+    public int getFoldNo() {
+        return this.foldNo;
+    }
+
+    public void setFoldNo(int foldNo) {
+        this.foldNo = foldNo;
+    }
+
+    public int getSeed() {
+        return this.seed;
+    }
+
+    public void setSeed(int seed) {
+        this.seed = seed;
+    }
+
     /**
      * Generic interface for different Metrics
      *
@@ -371,6 +387,8 @@ public class ClassifierResult
     private String[] attributeEvalArgs;
     private Date startTime;
     private Date finishTime;
+    private int foldNo;
+    private int seed;
 
     public ClassifierResult(String str)
     {

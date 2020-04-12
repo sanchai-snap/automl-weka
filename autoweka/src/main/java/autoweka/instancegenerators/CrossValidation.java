@@ -93,12 +93,8 @@ public class CrossValidation extends InstanceGenerator
         if(numFolds <= 1)
             throw new RuntimeException("numFolds must be set to something > 1");
 
-        List<String> instanceStrings = new ArrayList<String>(numFolds);
-        for(int i = 0; i < numFolds; i++)
-        {
-            //Should probably change this to using a Properties object, but meh
-            instanceStrings.add("seed=" + seed + ":numFolds=" + numFolds + ":fold=" + i);
-        }
+        List<String> instanceStrings = new ArrayList<>(numFolds);
+        instanceStrings.add("seed=" + seed + ":numFolds=" + numFolds + ":fold=" + numFolds);
         return instanceStrings;
     }
 }

@@ -1,11 +1,9 @@
 package autoweka.smac;
 
 import java.util.Queue;
-
-import java.util.Arrays;
-
 import autoweka.Wrapper;
 import autoweka.ClassifierResult;
+import autoweka.tools.CrossValidateResultUpdater;
 import ca.ubc.cs.datastore.CrossValidateResult;
 
 public class SMACWrapper extends Wrapper
@@ -14,7 +12,6 @@ public class SMACWrapper extends Wrapper
 
     public static void main(String[] args)
     {
-    	System.out.println("Start SMAC Wrapper : "+Arrays.toString(args));
         SMACWrapper wrapper = new SMACWrapper();
         try {
             wrapper.run(args);
@@ -47,26 +44,22 @@ public class SMACWrapper extends Wrapper
     }
 
     @Override
-    protected CrossValidateResult _processResults(ClassifierResult res)
-    {
+    protected CrossValidateResult _processResults(ClassifierResult res) {
         //Get the score
         double score = res.getScore();
-        if(mRawEval)
-        {
+        if (mRawEval) {
             score = res.getRawScore();
         }
 
         //Did we complete?
         String resultStr = "SAT";
-        if(!res.getCompleted())
-        {
+        if (!res.getCompleted()) {
             resultStr = "TIMEOUT";
         }
 
         StringBuilder extraResultsSB = new StringBuilder();
         int i = 0;
-        while(mProperties.containsKey("extraRun" + i))
-        {
+        while (mProperties.containsKey("extraRun" + i)) {
             //Run this instance
             ClassifierResult evalRes = mRunner.evaluateClassifierOnTesting(res.getClassifier(), mProperties.getProperty("extraRun" + i), mResultMetric, mTimeout);
             extraResultsSB.append("(");
@@ -77,44 +70,27 @@ public class SMACWrapper extends Wrapper
             i++;
         }
         //We need to add the norm penalty
-        if(mRawEval)
-        {
+        if (mRawEval) {
             extraResultsSB.append("[");
             extraResultsSB.append(res.getNormalizationPenalty());
             extraResultsSB.append("] ");
         }
-        if(res.getMemOut()){
+        if (res.getMemOut()) {
             extraResultsSB.append("MEMOUT ");
         }
 
         extraResultsSB.append(res.getPercentEvaluated());
 
-        if(!res.getCompleted()){
+        if (!res.getCompleted()) {
             return null;
         }
 
         //Print the result string
         String resultString = "Result for ParamILS: " + resultStr + ", " + res.getTime() + ", 0, " + score + ", " + mExperimentSeed + ", EXTRA " + extraResultsSB.toString();
-//        System.out.println(resultString);
 
         CrossValidateResult crossValidateResult = new CrossValidateResult();
-        crossValidateResult.setMatricValue(res.getRawScore());
-        crossValidateResult.setComplete(res.getCompleted());
+        CrossValidateResultUpdater.updateValue(crossValidateResult, res);
         crossValidateResult.setResultString(resultString);
-        crossValidateResult.setEvaluation(res.getEvaluation());
-        crossValidateResult.setClassifier(res.getClassifier());
-        crossValidateResult.setClassifierArgs(res.getClassiferArgsArray());
-        crossValidateResult.setAttributeSelection(res.getAttributeSelection());
-
-        crossValidateResult.setAttributeEval(res.getAttributeEvalClassName());
-        crossValidateResult.setAttributeEvalArgs(res.getAttributeEvalArgs());
-        crossValidateResult.setAttributeSearch(res.getAttributeSearchClassName());
-        crossValidateResult.setAttributeSearchArgs(res.getAttributeSearchArgs());
-
-        crossValidateResult.setStartTime(res.getStartTime());
-        crossValidateResult.setFinishTime(res.getFinishTime());
-
-        crossValidateResult.setCrossValidationString(res.getModelString());
 
         return crossValidateResult;
     }

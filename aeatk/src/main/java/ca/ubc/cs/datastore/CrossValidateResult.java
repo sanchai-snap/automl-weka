@@ -6,7 +6,7 @@ import weka.classifiers.Evaluation;
 
 import java.util.Date;
 
-public class CrossValidateResult implements Comparable<CrossValidateResult>{
+public class CrossValidateResult implements Comparable<CrossValidateResult> {
     private double matricValue;
     private String crossValidationString;
     private String resultString;
@@ -20,6 +20,9 @@ public class CrossValidateResult implements Comparable<CrossValidateResult>{
     private String[] attributeSearchArgs;
     private String attributeEval;
     private String[] attributeEvalArgs;
+
+    private int foldNo;
+    private int seed;
 
     private Date startTime;
     private Date finishTime;
@@ -43,7 +46,7 @@ public class CrossValidateResult implements Comparable<CrossValidateResult>{
 
     @Override
     public int compareTo(CrossValidateResult o) {
-        if(o == null)
+        if (o == null)
             return 0;
         return Double.compare(matricValue, o.getMatricValue());
     }
@@ -142,5 +145,34 @@ public class CrossValidateResult implements Comparable<CrossValidateResult>{
 
     public void setFinishTime(Date finishTime) {
         this.finishTime = finishTime;
+    }
+
+    public int getFoldNo() {
+        return this.foldNo;
+    }
+
+    public void setFoldNo(int foldNo) {
+        this.foldNo = foldNo;
+    }
+
+    public int getSeed() {
+        return this.seed;
+    }
+
+    public void setSeed(int seed) {
+        this.seed = seed;
+    }
+
+    public int hashCode() {
+        return this.crossValidationString.hashCode();
+    }
+
+    public boolean equals(Object obj) {
+        if (!(obj instanceof CrossValidateResult))
+            return false;
+        CrossValidateResult cvr = (CrossValidateResult)obj;
+        if (cvr.crossValidationString == null)
+            return false;
+        return this.crossValidationString.equals(cvr.crossValidationString);
     }
 }

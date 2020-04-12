@@ -16,6 +16,8 @@
 
 package weka.classifiers.meta;
 
+import autoweka.ClassifierResult;
+import autoweka.tools.CrossValidateResultUpdater;
 import ca.ubc.cs.datastore.CrossValidateResult;
 import ca.ubc.cs.datastore.RunResultHistory;
 import ca.ubc.cs.datastore.ValidationResultStore;
@@ -88,6 +90,8 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
     /** Default */
     static final int DEFAULT_N_BEST = 1;
 
+    static final int DEFAULT_FOLD_NO = 10;
+
     /** The class of the chosen attribute search method. */
     public String getAttributeSearchClass() {
         return attributeSearchClass;
@@ -140,6 +144,14 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
 
     public void setFinishTime(Date finishTime) {
         this.finishTime = finishTime;
+    }
+
+    public int getFoldNo() {
+        return this.foldNo;
+    }
+
+    public void setFoldNo(int foldNo) {
+        this.foldNo = foldNo;
     }
 
     /** Internal evaluation method. */
@@ -233,6 +245,8 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
     /** The chosen attribute selection method. */
     protected AttributeSelection as;
 
+    protected AutoWEKAClassifierExternalModel externalModel;
+
     protected boolean hasAttributeSelection;
 
     /** The class of the chosen classifier. */
@@ -246,6 +260,8 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
 
     private Date startTime;
     private Date finishTime;
+
+    private int foldNo;
 
     /** The paths to the internal Auto-WEKA files.*/
     protected String[] msExperimentPaths;
@@ -292,6 +308,10 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
 
     /** The time it took to train the final classifier. */
     protected double finalTrainTime = -1;
+
+    protected boolean skipSearch = false;
+
+    protected int runCountLimit = Integer.MAX_VALUE;
 
     private transient weka.gui.Logger wLog;
 
@@ -367,284 +387,145 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
     * @throws Exception if the classifier could not be built successfully.
     */
     public void buildClassifier(Instances is) throws Exception {
-        getCapabilities().testWithFail(is);
-
         String experimentKey = UUID.randomUUID().toString();
-        try{
-            estimatedMetricValues = new double[parallelRuns];
-            msExperimentPaths = new String[parallelRuns];
-            for (int i = 0; i < parallelRuns; i++) {
-                estimatedMetricValues[i] = -1;
-                msExperimentPaths[i] = getTempDirectoryPath();
+        try {
+            if (this.externalModel != null)
+                buildClassifierExternalModel(is, experimentKey);
+            if (!this.skipSearch)
+                buildClassifierInternal(is, experimentKey);
+        } finally {
+            this.runResultHistory = ValidationResultStore.getInstance().pollRunResultHistory(experimentKey);
+        }
+        if (this.runResultHistory != null && this.runResultHistory.size() > 0) {
+            CrossValidateResult result = this.runResultHistory.getBestResult();
+            Evaluation eval = result.getEvaluation();
+            this.log.info(" {}, {} ", Double.valueOf(eval.incorrect()), Double.valueOf(eval.pctIncorrect()));
+            this.classifier = (Classifier)result.getClassifier();
+            this.as = result.getAttributeSelection();
+            this.eval = eval;
+            setAttributeEvalClass(result.getAttributeEval());
+            setAttributeEvalArgs(result.getAttributeEvalArgs());
+            setAttributeSearchClass(result.getAttributeSearch());
+            setAttributeSearchArgs(result.getAttributeSearchArgs());
+            setStartTime(result.getStartTime());
+            setFinishTime(result.getFinishTime());
+            setFoldNo(result.getFoldNo());
+            setSeed(result.getSeed());
+            this.hasAttributeSelection = (this.as != null);
+            if (this.as == null) {
+                this.as = new AttributeSelection();
+                this.log.info("No attribute selection found");
+            }
+            this.as.SelectAttributes(is);
+            long startTime = System.currentTimeMillis();
+            if (this.as != null)
+                is = this.as.reduceDimensionality(is);
+            this.classifier.buildClassifier(is);
+            long stopTime = System.currentTimeMillis();
+            this.finalTrainTime = (stopTime - startTime) / 1000.0D;
+            this.classifierClass = this.classifier.getClass().toString();
+            this.classifierArgs = result.getClassifierArgs();
+            eval = new Evaluation(is);
+            eval.evaluateModel(this.classifier, is, new Object[0]);
+            Instances newInstances = new Instances(is);
+            Evaluation evalOther = new Evaluation(newInstances);
+            for (Instance instance : newInstances)
+                evalOther.evaluateModelOnceAndRecordPrediction(this.classifier, instance);
+        } else {
+            this.runResultHistory = ValidationResultStore.getInstance().getEmptyResult();
+        }
+
+    }
+
+    private void buildClassifierInternal(Instances is, String experimentKey) throws Exception {
+        getCapabilities().testWithFail(is);
+        try {
+            this.estimatedMetricValues = new double[this.parallelRuns];
+            this.msExperimentPaths = new String[this.parallelRuns];
+            for (int i = 0; i < this.parallelRuns; i++) {
+                this.estimatedMetricValues[i] = -1.0D;
+                this.msExperimentPaths[i] = getTempDirectoryPath();
                 Experiment exp = new Experiment();
                 exp.name = expName;
                 exp.experimentKey = experimentKey;
-
-                exp.resultMetric = metric.toString();
-
+                exp.runCount = this.runCountLimit;
+                exp.resultMetric = this.metric.toString();
                 Properties props = Util.parsePropertyString("type=trainTestArff:testArff=__dummy__");
                 ArffSaver saver = new ArffSaver();
                 saver.setInstances(is);
-                File fp = new File(msExperimentPaths[i] + expName + File.separator + expName + ".arff");
+                File fp = new File(this.msExperimentPaths[i] + expName + File.separator + expName + ".arff");
                 saver.setFile(fp);
                 saver.writeBatch();
                 props.setProperty("trainArff", URLDecoder.decode(fp.getAbsolutePath()));
                 props.setProperty("classIndex", String.valueOf(is.classIndex()));
                 exp.datasetString = Util.propertiesToString(props);
-                exp.instanceGenerator = "autoweka.instancegenerators." + String.valueOf(resampling);
-                exp.instanceGeneratorArgs = "seed=" + (seed + 1) + ":" + resamplingArgs + ":seed=" + (seed + i);
+                exp.instanceGenerator = "autoweka.instancegenerators." + String.valueOf(this.resampling);
+                exp.instanceGeneratorArgs = "seed=" + (this.seed + 1) + ":numFolds=" + this.foldNo + ":seed=" + (this.seed + i);
                 exp.attributeSelection = true;
-
-                exp.attributeSelectionTimeout = Math.max(timeLimit / 60, 1);
-                exp.tunerTimeout = wallClockLimit;
-    //            exp.tunerTimeout = timeLimit * 1;
-                exp.trainTimeout = Math.max(timeLimit / 60, 1) * 5;
-
-                exp.memory = memLimit + "m";
-                exp.extraPropsString = extraArgs;
-
-                //Setup all the extra args
-                List<String> args = new LinkedList<String>();
+                exp.attributeSelectionTimeout = Math.max(this.timeLimit / 60, 1);
+                exp.tunerTimeout = this.wallClockLimit;
+                exp.trainTimeout = (Math.max(this.timeLimit / 60, 1) * 5);
+                exp.memory = this.memLimit + "m";
+                exp.extraPropsString = this.extraArgs;
+                List<String> args = new LinkedList<>();
                 args.add("-experimentpath");
-                args.add(msExperimentPaths[i]);
-                //Make the thing
-
+                args.add(this.msExperimentPaths[i]);
                 buildExperimentConstructor(exp, args);
-
-                if (nBestConfigs > 1) {
-                    String temporaryDirPath = msExperimentPaths[i] + expName + File.separator; //TODO make this a global
+                if (this.nBestConfigs > 1) {
+                    String temporaryDirPath = this.msExperimentPaths[i] + expName + File.separator;
                     Util.makePath(temporaryDirPath + configurationInfoDirPath);
                     Util.initializeFile(temporaryDirPath + configurationRankingPath);
                     Util.initializeFile(temporaryDirPath + configurationHashSetPath);
                 }
             }
-
-    //        final String javaExecutable = autoweka.Util.getJavaExecutable();
-    //
-    //        if(!(new File(javaExecutable)).isFile() && // Windows...
-    //          !(new File(javaExecutable + ".exe")).isFile()) {
-    //            throw new Exception("Java executable could not be found. Please refer to \"Known Issues\" in the Auto-WEKA manual.");
-    //        }
-
-            Thread[] workers = new Thread[parallelRuns];
-
-            for (int i = 0; i < parallelRuns; i++) {
-                final int index = i;
-                workers[i] = new Thread(new Runnable() {
+            Thread[] workers = new Thread[this.parallelRuns];
+            int j;
+            for (j = 0; j < this.parallelRuns; j++) {
+                final int index = j;
+                workers[j] = new Thread(new Runnable() {
                     public void run() {
                         String[] args = new String[2];
-                        args[0] = msExperimentPaths[index] + expName;
-                        args[1] = "" + (seed + index);
-
+                        args[0] = AutoWEKAClassifier.this.msExperimentPaths[index] + AutoWEKAClassifier.expName;
+                        args[1] = "" + (AutoWEKAClassifier.this.seed + index);
                         List<String> resultList = ExperimentRunner.runMain(args);
-
                         Pattern p = Pattern.compile(".*Estimated mean quality of final incumbent config .* on test set: (-?[0-9.]+).*");
                         Pattern pint = Pattern.compile(".*mean quality of.*: (-?[0-9E.]+);.*");
                         for (String line : resultList) {
                             Matcher m = p.matcher(line);
                             if (m.matches()) {
-                                estimatedMetricValues[index] = Double.parseDouble(m.group(1));
-                                if (Arrays.asList(metricsToMax).contains(metric)) {
-                                    estimatedMetricValues[index] *= -1;
-                                }
+                                AutoWEKAClassifier.this.estimatedMetricValues[index] = Double.parseDouble(m.group(1));
+                                if (Arrays.<AutoWEKAClassifier.Metric>asList(AutoWEKAClassifier.metricsToMax).contains(AutoWEKAClassifier.this.metric))
+                                    AutoWEKAClassifier.this.estimatedMetricValues[index] = AutoWEKAClassifier.this.estimatedMetricValues[index] * -1.0D;
                             }
                         }
-
-
                     }
                 });
-                workers[i].start();
+                workers[j].start();
             }
             try {
-                for (int i = 0; i < parallelRuns; i++) {
-                    workers[i].join();
-                }
+                for (j = 0; j < this.parallelRuns; j++)
+                    workers[j].join();
             } catch (InterruptedException e) {
-                for (int i = 0; i < parallelRuns; i++) {
-                    workers[i].interrupt();
-                }
+                for (int k = 0; k < this.parallelRuns; k++)
+                    workers[k].interrupt();
                 throw new InterruptedException("Auto-WEKA run interrupted!");
             }
-
-            // get results
-//            TrajectoryGroup[] groups = new TrajectoryGroup[parallelRuns];
-//            GetBestFromTrajectoryGroup[] bests = new GetBestFromTrajectoryGroup[parallelRuns];
-//            for (int i = 0; i < parallelRuns; i++) {
-//                groups[i] = TrajectoryMerger.mergeExperimentFolder(msExperimentPaths[i] + expName);
-//
-//                log.debug("Optimization trajectory {}:", i);
-//                for (Trajectory t : groups[i].getTrajectories()) {
-//                    log.debug("{}", t);
-//                }
-//
-//                bests[i] = new GetBestFromTrajectoryGroup(groups[i]);
-//                log.info("Thread {}, best configuration estimate {}", i, estimatedMetricValues[i]);
-//            }
-//
-//            boolean allFailed = true;
-//            for (int i = 0; i < parallelRuns; i++) {
-//                allFailed &= bests[i].errorEstimate == autoweka.ClassifierResult.getInfinity();
-//            }
-//            if (allFailed) {
-//                throw new Exception("All runs timed out, unable to find good configuration. Please allow more time and rerun.");
-//            }
-//
-//            int bestIndex = 0;
-//            GetBestFromTrajectoryGroup mBest = bests[bestIndex];
-//            if (Arrays.asList(metricsToMax).contains(metric)) {
-//                for (int i = 1; i < parallelRuns; i++) {
-//                    if (estimatedMetricValues[i] > estimatedMetricValues[bestIndex]) {
-//                        mBest = bests[i];
-//                        bestIndex = i;
-//                    }
-//                }
-//            } else {
-//                for (int i = 1; i < parallelRuns; i++) {
-//                    if (estimatedMetricValues[i] < estimatedMetricValues[bestIndex]) {
-//                        mBest = bests[i];
-//                        bestIndex = i;
-//                    }
-//                }
-//            }
-//            estimatedMetricValue = estimatedMetricValues[bestIndex];
-//
-//            //Print log of best configurations
-//            if (nBestConfigs > 1) {
-//                try {
-//                    ConfigurationRanker.rank(nBestConfigs, msExperimentPaths[bestIndex] + expName + File.separator, mBest.rawArgs);
-//                    bestConfigsCollection = ConfigurationCollection.fromXML(msExperimentPaths[bestIndex] + expName + File.separator + configurationRankingPath, ConfigurationCollection.class);
-//                } catch (Exception e) {
-//                    if (e instanceof FileNotFoundException || e instanceof NoSuchElementException) {
-//                        System.out.println("Could not find any configuration fully evaluated on all 10 folds. Please provide Auto-WEKA with more run time");
-//                        bestConfigsCollection = null; //Redundant but just to be sure
-//                    }
-//                }
-//
-//            }
-//
-//            classifierClass = mBest.classifierClass;
-//            classifierArgs = Util.splitQuotedString(mBest.classifierArgs).toArray(new String[0]);
-//            attributeSearchClass = mBest.attributeSearchClass;
-//            if (mBest.attributeSearchArgs != null) {
-//                attributeSearchArgs = Util.splitQuotedString(mBest.attributeSearchArgs).toArray(new String[0]);
-//            }
-//            attributeEvalClass = mBest.attributeEvalClass;
-//            if (mBest.attributeEvalArgs != null) {
-//                attributeEvalArgs = Util.splitQuotedString(mBest.attributeEvalArgs).toArray(new String[0]);
-//            }
-//
-//            log.info("classifier: {}, arguments: {}, attribute search: {}, attribute search arguments: {}, attribute evaluation: {}, attribute evaluation arguments: {}",
-//                    classifierClass, classifierArgs, attributeSearchClass, attributeSearchArgs, attributeEvalClass, attributeEvalArgs);
-//
-//            // train model on entire dataset and save
-//            as = new AttributeSelection();
-//
-//            if (attributeSearchClass != null) {
-//                ASSearch asSearch = ASSearch.forName(attributeSearchClass, attributeSearchArgs.clone());
-//                as.setSearch(asSearch);
-//            }
-//            if (attributeEvalClass != null) {
-//                ASEvaluation asEval = ASEvaluation.forName(attributeEvalClass, attributeEvalArgs.clone());
-//                as.setEvaluator(asEval);
-//            }
-//            as.SelectAttributes(is);
-//
-//            classifier = AbstractClassifier.forName(classifierClass, classifierArgs.clone());
-//
-//            long startTime = System.currentTimeMillis();
-//            is = as.reduceDimensionality(is);
-//            classifier.buildClassifier(is);
-//            long stopTime = System.currentTimeMillis();
-//            finalTrainTime = (stopTime - startTime) / 1000.0;
-//
-//            eval = new Evaluation(is);
-//            eval.evaluateModel(classifier, is);
-
-        }catch(Exception e){
-            log.error("Result Future: ",e);
-//            e.printStackTrace();
-        }finally{
-            runResultHistory = ValidationResultStore.getInstance().pollRunResultHistory(experimentKey);
+        } catch (Exception e) {
+            this.log.error("Result Future: ", e);
         }
+    }
 
-        if(runResultHistory != null && runResultHistory.size() > 0){
-            CrossValidateResult result = runResultHistory.getBestResult();
-            Evaluation eval = result.getEvaluation();
-            log.info(" {}, {} ", eval.incorrect(), eval.pctIncorrect());
-            classifier = result.getClassifier();
-            as = result.getAttributeSelection();
-            this.eval = eval;
+    private void buildClassifierExternalModel(Instances is, String experimentKey) throws Exception {
+        ClassifierResult result = this.externalModel.buildClassifier(is);
+        CrossValidateResult crossValidateResult = new CrossValidateResult();
+        CrossValidateResultUpdater.updateValue(crossValidateResult, result);
+        ValidationResultStore store = ValidationResultStore.getInstance();
+        RunResultHistory runResultHistory = store.getRunResultHistory(experimentKey);
+        runResultHistory.addData(crossValidateResult);
+    }
 
-            setAttributeEvalClass(result.getAttributeEval());
-            setAttributeEvalArgs(result.getAttributeEvalArgs());
-            setAttributeSearchClass(result.getAttributeSearch());
-            setAttributeSearchArgs(result.getAttributeSearchArgs());
-
-            setStartTime(result.getStartTime());
-            setFinishTime(result.getFinishTime());
-
-            hasAttributeSelection = as != null;
-            if(as == null){
-                as = new AttributeSelection();
-                log.info("No attribute selection found");
-            }
-            as.SelectAttributes(is);
-
-            long startTime = System.currentTimeMillis();
-            if(as != null)
-                is = as.reduceDimensionality(is);
-
-            classifier.buildClassifier(is);
-
-            long stopTime = System.currentTimeMillis();
-            finalTrainTime = (stopTime - startTime) / 1000.0;
-
-            classifierClass = classifier.getClass().toString();
-            classifierArgs = result.getClassifierArgs();
-
-            eval = new Evaluation(is);
-            eval.evaluateModel(classifier, is);
-
-
-            Instances newInstances = new Instances(is);
-//            for(Instance instance : newInstances){
-//                instance.setClassValue(0.0);
-//            }
-
-            Evaluation evalOther = new Evaluation(newInstances);
-            for (Instance instance : newInstances) {
-                evalOther.evaluateModelOnceAndRecordPrediction(classifier, instance);
-            }
-
-//            for(Prediction prediction : evalOther.predictions()){
-//
-//                System.out.println("Actual Value : " + prediction.actual()+ ", Prediction value :"+prediction.predicted()+", Prediction Weight"+prediction.weight());
-//            }
-//
-//            System.out.println("prediction result : "+evalOther.correct());
-//            System.out.println("prediction result : "+evalOther.rootMeanSquaredError());
-
-
-//            for(CrossValidateResult history : runResultHistory.getResultList()){
-//                Evaluation evalOther = new Evaluation(is);
-//
-//                for (Instance instance : is) {
-//                    evalOther.evaluateModelOnceAndRecordPrediction(classifier, instance);
-//                }
-////                eval.evaluateModelOnceAndRecordPrediction(classifier, is);
-////                log.info(" {}, {} ", history.getEvaluation().pctIncorrect());
-////                log.info("{}", Arrays.toString(history.getClassifierArgs()));
-////                try {
-////                    history.getClassifier().distributionForInstance(is.get(0));
-////                }catch(Exception e){ log.error(classifier.getClass().toString(), e ); }
-//            }
-
-        }else{
-            // default empty set
-            runResultHistory = ValidationResultStore.getInstance().getEmptyResult();
-        }
-
-
+    public void setExternalModel(AutoWEKAClassifierExternalModel externalModel) {
+        this.externalModel = externalModel;
     }
 
     protected void buildExperimentConstructor(Experiment exp, List<String> args) {
@@ -707,6 +588,9 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
         result.addElement(
             new Option("\tThe number of parallel runs. EXPERIMENTAL.\n" + "\t(default: " + DEFAULT_PARALLEL_RUNS + ")",
                 "parallelRuns", 1, "-parallelRuns <runs>"));
+        result.addElement(
+                new Option("\tSkip searching and relay on given parameters\n\t(default: false)",
+                        "skipSearch", 1, "-skipSearch"));
         //result.addElement(
         //    new Option("\tThe type of resampling used.\n" + "\t(default: " + String.valueOf(DEFAULT_RESAMPLING) + ")",
         //        "resampling", 1, "-resampling <resampling>"));
@@ -746,6 +630,10 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
         result.add("" + metric);
         result.add("-parallelRuns");
         result.add("" + parallelRuns);
+        result.add("-skipSearch");
+        result.add("" + this.skipSearch);
+        result.add("-runCountLimit");
+        result.add("" + this.runCountLimit);
         //result.add("-resampling");
         //result.add("" + resampling);
         //result.add("-resamplingArgs");
@@ -813,6 +701,22 @@ public class AutoWEKAClassifier extends AbstractClassifier implements Additional
             parallelRuns = Integer.parseInt(tmpStr);
         } else {
             parallelRuns = DEFAULT_PARALLEL_RUNS;
+        }
+
+        tmpStr = Utils.getOption("skipSearch", options);
+        if (tmpStr.length() != 0)
+            this.skipSearch = Boolean.valueOf(tmpStr).booleanValue();
+        tmpStr = Utils.getOption("foldNo", options);
+        if (tmpStr.length() != 0) {
+            this.foldNo = Integer.parseInt(tmpStr);
+        } else {
+            this.foldNo = 10;
+        }
+        tmpStr = Utils.getOption("runCountLimit", options);
+        if (tmpStr.length() != 0) {
+            this.runCountLimit = Integer.parseInt(tmpStr);
+        } else {
+            this.runCountLimit = Integer.MAX_VALUE;
         }
 
         //tmpStr = Utils.getOption("resampling", options);
