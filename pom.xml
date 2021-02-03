@@ -7,7 +7,7 @@
   <groupId>com.snaplogic.datascience</groupId>
   <artifactId>automl-weka</artifactId>
   <packaging>pom</packaging>
-  <version>1.0.7</version>
+  <version>1.0.8</version>
 
 <modules>
     <module>aeatk</module>
@@ -30,12 +30,12 @@
       <url>http://doodleproject.sourceforge.net/maven2/release</url>
     </repository>
     <repository>
-      <id>repo2_maven_org</id>
-      <url>http://repo2.maven.org/maven2</url>
+      <id>repo_maven_org</id>
+      <url>https://repo1.maven.org/maven2</url>
     </repository>
     <repository>
-      <id>ebi-repo</id>
-      <url>http://www.ebi.ac.uk/intact/maven/nexus/content/repositories/ebi-repo/</url>
+      <id>snaplogic-autoweka</id>
+      <url>https://raw.github.com/sanchai-snap/autoweka-repo/master/</url>
     </repository>
   </repositories>
 
