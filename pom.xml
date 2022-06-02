@@ -7,7 +7,7 @@
   <groupId>com.snaplogic.datascience</groupId>
   <artifactId>automl-weka</artifactId>
   <packaging>pom</packaging>
-  <version>1.0.8</version>
+  <version>1.0.9</version>
 
 <modules>
     <module>aeatk</module>
@@ -53,7 +53,7 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
-      <version>1.7.25</version>
+      <version>1.7.36</version>
     </dependency>
     <dependency>
       <groupId>au.com.bytecode</groupId>
